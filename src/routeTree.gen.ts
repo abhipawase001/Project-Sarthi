@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as DriverRouteImport } from './routes/driver'
@@ -16,6 +17,11 @@ import { Route as ChannelsRouteImport } from './routes/channels'
 import { Route as AuthorityRouteImport } from './routes/authority'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/driver': typeof DriverRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/driver': typeof DriverRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,12 +79,27 @@ export interface FileRoutesById {
   '/driver': typeof DriverRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/authority' | '/channels' | '/driver' | '/live' | '/rewards'
+  fullPaths:
+    | '/'
+    | '/authority'
+    | '/channels'
+    | '/driver'
+    | '/live'
+    | '/rewards'
+    | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/authority' | '/channels' | '/driver' | '/live' | '/rewards'
+  to:
+    | '/'
+    | '/authority'
+    | '/channels'
+    | '/driver'
+    | '/live'
+    | '/rewards'
+    | '/sitemap.xml'
   id:
     | '__root__'
     | '/'
@@ -85,6 +108,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/live'
     | '/rewards'
+    | '/sitemap.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,10 +118,18 @@ export interface RootRouteChildren {
   DriverRoute: typeof DriverRoute
   LiveRoute: typeof LiveRoute
   RewardsRoute: typeof RewardsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rewards': {
       id: '/rewards'
       path: '/rewards'
@@ -150,7 +182,18 @@ const rootRouteChildren: RootRouteChildren = {
   DriverRoute: DriverRoute,
   LiveRoute: LiveRoute,
   RewardsRoute: RewardsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
