@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as LiveRouteImport } from './routes/live'
+import { Route as ImpactRouteImport } from './routes/impact'
 import { Route as DriverRouteImport } from './routes/driver'
 import { Route as DepotRouteImport } from './routes/depot'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as ChannelsRouteImport } from './routes/channels'
 import { Route as AuthorityRouteImport } from './routes/authority'
 import { Route as AboutRouteImport } from './routes/about'
@@ -34,6 +36,11 @@ const LiveRoute = LiveRouteImport.update({
   path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ImpactRoute = ImpactRouteImport.update({
+  id: '/impact',
+  path: '/impact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DriverRoute = DriverRouteImport.update({
   id: '/driver',
   path: '/driver',
@@ -42,6 +49,11 @@ const DriverRoute = DriverRouteImport.update({
 const DepotRoute = DepotRouteImport.update({
   id: '/depot',
   path: '/depot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChannelsRoute = ChannelsRouteImport.update({
@@ -70,8 +82,10 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/authority': typeof AuthorityRoute
   '/channels': typeof ChannelsRoute
+  '/demo': typeof DemoRoute
   '/depot': typeof DepotRoute
   '/driver': typeof DriverRoute
+  '/impact': typeof ImpactRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -81,8 +95,10 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/authority': typeof AuthorityRoute
   '/channels': typeof ChannelsRoute
+  '/demo': typeof DemoRoute
   '/depot': typeof DepotRoute
   '/driver': typeof DriverRoute
+  '/impact': typeof ImpactRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -93,8 +109,10 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/authority': typeof AuthorityRoute
   '/channels': typeof ChannelsRoute
+  '/demo': typeof DemoRoute
   '/depot': typeof DepotRoute
   '/driver': typeof DriverRoute
+  '/impact': typeof ImpactRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -106,8 +124,10 @@ export interface FileRouteTypes {
     | '/about'
     | '/authority'
     | '/channels'
+    | '/demo'
     | '/depot'
     | '/driver'
+    | '/impact'
     | '/live'
     | '/rewards'
     | '/sitemap.xml'
@@ -117,8 +137,10 @@ export interface FileRouteTypes {
     | '/about'
     | '/authority'
     | '/channels'
+    | '/demo'
     | '/depot'
     | '/driver'
+    | '/impact'
     | '/live'
     | '/rewards'
     | '/sitemap.xml'
@@ -128,8 +150,10 @@ export interface FileRouteTypes {
     | '/about'
     | '/authority'
     | '/channels'
+    | '/demo'
     | '/depot'
     | '/driver'
+    | '/impact'
     | '/live'
     | '/rewards'
     | '/sitemap.xml'
@@ -140,8 +164,10 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AuthorityRoute: typeof AuthorityRoute
   ChannelsRoute: typeof ChannelsRoute
+  DemoRoute: typeof DemoRoute
   DepotRoute: typeof DepotRoute
   DriverRoute: typeof DriverRoute
+  ImpactRoute: typeof ImpactRoute
   LiveRoute: typeof LiveRoute
   RewardsRoute: typeof RewardsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -170,6 +196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/impact': {
+      id: '/impact'
+      path: '/impact'
+      fullPath: '/impact'
+      preLoaderRoute: typeof ImpactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/driver': {
       id: '/driver'
       path: '/driver'
@@ -182,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/depot'
       fullPath: '/depot'
       preLoaderRoute: typeof DepotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/channels': {
@@ -220,8 +260,10 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthorityRoute: AuthorityRoute,
   ChannelsRoute: ChannelsRoute,
+  DemoRoute: DemoRoute,
   DepotRoute: DepotRoute,
   DriverRoute: DriverRoute,
+  ImpactRoute: ImpactRoute,
   LiveRoute: LiveRoute,
   RewardsRoute: RewardsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
