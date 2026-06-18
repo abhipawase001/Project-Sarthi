@@ -9,7 +9,7 @@ import {
   BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
 import { CITY_KPIS, HOURLY_RIDERSHIP, OCCUPANCY_DIST, ROUTE_PERF } from "@/lib/mockData";
-import { Users, Activity, Leaf, AlertTriangle, Clock, TrendingUp, Bus as BusIcon } from "lucide-react";
+import { Users, Activity, Leaf, Clock, Bus as BusIcon } from "lucide-react";
 
 export const Route = createFileRoute("/authority")({
   head: () => ({ meta: [{ title: "Authority Dashboard — Sarthi" }, { name: "description", content: "Fleet command center with live KPIs, ridership analytics and emissions impact." }] }),
@@ -24,12 +24,6 @@ const tooltipStyle = {
 
 function AuthorityPage() {
   const buses = useLiveBuses(2000);
-  const alerts = [
-    { time: "14:02", level: "warn",  msg: "MH17-CD-4521 occupancy HIGH on Malpani route" },
-    { time: "13:54", level: "info",  msg: "Route R2 average delay +3min — traffic on Akole road" },
-    { time: "13:31", level: "ok",    msg: "Driver Vijay M. completed shift, 8 trips" },
-    { time: "13:10", level: "warn",  msg: "Schedule optimizer recommends +1 bus on R1 17:00–19:00" },
-  ];
   return (
     <div className="min-h-screen">
       <Nav />
