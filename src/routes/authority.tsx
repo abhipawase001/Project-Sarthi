@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Nav } from "@/components/Nav";
 import { ClientMap } from "@/components/ClientMap";
+import { LiveIncidents } from "@/components/LiveIncidents";
 import { useLiveBuses } from "@/hooks/useLiveBuses";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -124,6 +125,8 @@ function AuthorityPage() {
             </div>
           </div>
         </div>
+
+        <LiveIncidents />
 
         <div className="grid lg:grid-cols-3 gap-4">
           <div className="surface border border-border rounded-2xl p-5 lg:col-span-2">
