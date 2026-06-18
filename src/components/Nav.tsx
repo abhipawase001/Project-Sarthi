@@ -8,6 +8,7 @@ const links = [
   { to: "/authority", label: "Authority" },
   { to: "/rewards", label: "Eco Rewards" },
   { to: "/channels", label: "SMS / IVR" },
+  { to: "/about", label: "About" },
 ] as const;
 
 export function Nav() {
