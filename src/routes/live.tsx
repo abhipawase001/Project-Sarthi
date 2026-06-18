@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Nav } from "@/components/Nav";
 import { ClientMap } from "@/components/ClientMap";
+import { SarthiChat } from "@/components/SarthiChat";
+import { SosButton } from "@/components/SosButton";
 import { useLiveBuses } from "@/hooks/useLiveBuses";
 import { ROUTES, STOPS } from "@/lib/mockData";
 import { Bus as BusIcon, Users, Clock, Navigation, Search } from "lucide-react";
@@ -77,6 +79,8 @@ function LivePage() {
               {visible.length === 0 && <div className="text-sm text-muted-foreground text-center py-12">No buses match</div>}
             </div>
 
+            <SosButton />
+
             <div className="surface border border-border rounded-2xl p-4">
               <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">Nearby stops</div>
               <ul className="text-sm space-y-1.5">
@@ -88,6 +92,7 @@ function LivePage() {
           </div>
         </div>
       </div>
+      <SarthiChat buses={buses} />
     </div>
   );
 }

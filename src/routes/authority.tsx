@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Nav } from "@/components/Nav";
 import { ClientMap } from "@/components/ClientMap";
+import { LiveIncidents } from "@/components/LiveIncidents";
 import { useLiveBuses } from "@/hooks/useLiveBuses";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
