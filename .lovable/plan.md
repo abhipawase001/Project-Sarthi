@@ -1,94 +1,68 @@
+# Hackathon Winning-Edge Plan
 
-## Goal
+You already have the core (Live map, SOS, Sarthi chat, Anomaly AI, Depot console, RLS). To stand out at India Runs judging, add features that hit the rubric judges actually score: **Innovation, Social Impact, Technical Depth, Demo Polish, Scalability**.
 
-Add two flagship AI features that strengthen the hackathon pitch:
+## 1. Judge Demo Mode (highest ROI)
+A `/demo` route with a scripted 90-second walkthrough:
+- "Play Scenario" buttons: *Bus breakdown*, *Route deviation*, *Crowd surge*, *SOS triggered*
+- Auto-drives the map, fires anomalies, triggers Sarthi alerts, shows AI response live
+- Floating narrator card explains each step
+- Wins because judges see every feature in one click without you fumbling.
 
-1. **AI Anomaly Detection Engine** — watches live GPS pings, flags route deviations, bus bunching, traffic jams, and unscheduled idling with severity scores on the Authority dashboard.
-2. **AI Depot Admin Console** — a fully paperless depot module covering driver assignments, bus allocation, shift/duty rosters, fueling logs, and trip records. AI generates the daily roster automatically and natural-language commands replace manual data entry.
+## 2. Voice-First Multilingual Sarthi
+- Add Web Speech API mic button → STT → Sarthi → TTS reply
+- Language toggle: Hindi / English / Marathi / Tamil (Gemini handles translation)
+- Huge accessibility + Bharat-first story for judges
 
----
+## 3. Predictive ETA & Crowd Forecast
+- New `src/lib/eta-ai.functions.ts`: Gemini + historical `HOURLY_RIDERSHIP` predicts:
+  - Arrival ETA per stop (with confidence band)
+  - "Bus will be crowded in 15 min" warnings on Live map
+- Show as colored pills on stop markers
 
-## 1. AI Anomaly Detection Engine
+## 4. Accessibility Layer (Divyangjan)
+- High-contrast mode toggle
+- Screen-reader-friendly bus announcements ("Bus 42 arriving platform 3")
+- Wheelchair-accessible bus filter
+- Strong DEI judge points
 
-**New file:** `src/lib/anomaly.ts` — pure-TS detectors run client-side on the live bus stream (no extra backend cost):
+## 5. Offline PWA + SMS Fallback
+- Add `manifest.webmanifest` + service worker → installable, works offline
+- "Last known location" cache for low-network areas
+- Optional: server route `/api/public/sms-eta` that returns plain-text ETA (mention Twilio in pitch even if not wired)
 
-- `detectRouteDeviation(bus, route)` — haversine distance from expected polyline; >300m for 60s = HIGH.
-- `detectBunching(buses)` — two buses on same route within 400m & same heading = MEDIUM.
-- `detectTrafficJam(bus)` — speed <5 km/h for >90s outside known stops = MEDIUM.
-- `detectGhostBus(bus)` — no ping update for 120s = HIGH.
-- `detectOverspeed(bus)` — >55 km/h in city = LOW.
+## 6. Impact Dashboard (`/impact`)
+Public-facing KPIs auto-computed from DB:
+- CO₂ saved vs car trips
+- Avg wait time reduced
+- SOS response time
+- Anomalies auto-resolved by AI
+Gives judges concrete numbers to quote.
 
-Each returns `{ id, busId, type, severity, message, lat, lng, ts }`.
+## 7. Citizen Reporting + Gamification
+- "Report" button on each bus: overcrowded / rash driving / AC broken
+- Points + leaderboard for verified reports
+- Feeds depot console as a new data source
 
-**New file:** `src/lib/anomaly-ai.functions.ts` — server fn `explainAnomaly` calls Lovable AI Gateway (`google/gemini-3-flash-preview`) to produce a 1-line plain-Hindi/English root-cause suggestion + recommended action for any anomaly the operator clicks.
+## 8. Pitch Polish
+- Landing page hero: 1 killer line + animated stats counter
+- `/about` → add architecture diagram (Mermaid) + tech stack badges
+- README with problem→solution→impact→roadmap
+- 30-sec Loom-style auto-play video on landing (optional)
 
-**New component:** `src/components/AnomalyPanel.tsx` — replaces the static "Live Alerts" list on `/authority`. Shows live count by severity, color-coded list, "Ask AI why" button per row that streams the AI explanation inline.
+## Technical Notes
+- All AI via existing Lovable AI Gateway (`google/gemini-3-flash-preview`); no new keys.
+- New tables: `citizen_reports`, `impact_metrics` (RLS + GRANTs per project rules).
+- New routes: `/demo`, `/impact`, `/report`. PWA via `vite-plugin-pwa`.
+- Voice: browser-native APIs, no extra deps.
 
-**Map overlay:** `src/components/LiveMap.tsx` gets pulse markers at anomaly coordinates (red/amber/yellow).
-
----
-
-## 2. AI Depot Admin Console (paperless)
-
-**New route:** `src/routes/depot.tsx` (added to Nav, role-gated behind a simple "admin" toggle for the demo).
-
-Tabs:
-
-- **Today's Roster** — auto-generated table: `Bus | Driver | Conductor | Route | Shift Start | Shift End | Status`. Inline edit, drag-drop reassignment.
-- **Fleet** — bus register with reg no, capacity, fuel type, last service, odometer, health score (from anomaly engine).
-- **Crew** — driver/conductor register with license expiry, rest-hours compliance, rating.
-- **Trip Log** — every completed trip auto-recorded from bus pings (distance, duration, passengers, fuel est.). CSV export.
-- **Fueling & Maintenance** — log refuel + service entries; AI flags overdue services.
-
-**AI Roster Generator** (`src/lib/depot-ai.functions.ts`):
-- Server fn `generateRoster({ date, constraints })` → calls Gemini with structured output (Zod schema) returning a JSON roster respecting: driver rest hours (≥8h between shifts), license validity, route familiarity, bus capacity vs predicted demand from `HOURLY_RIDERSHIP`.
-- "Regenerate with AI" button on the Roster tab. Shows reasoning trace.
-
-**Natural-language command bar** at top of `/depot`:
-- "Assign Ramesh to R2 morning shift", "Mark MH17-CD-4521 in maintenance", "Show drivers idle today".
-- Server fn `depotCommand({ text })` uses Gemini tool-calling with 5 tools (assign_driver, set_bus_status, query_roster, log_fuel, schedule_service); returns the action it took + a confirmation message. Replaces paper logbooks.
-
----
-
-## 3. Database (Lovable Cloud)
-
-One migration adds:
-
-- `buses` (reg_no PK, capacity, fuel_type, status, odometer, last_service_at, health_score)
-- `drivers` (id, name, license_no, license_expiry, rating, phone)
-- `roster` (id, date, bus_id, driver_id, conductor_id, route, shift_start, shift_end, status)
-- `trip_logs` (id, bus_id, driver_id, route, started_at, ended_at, distance_km, passengers_est)
-- `fuel_logs` (id, bus_id, liters, cost, odometer, refueled_at)
-- `service_logs` (id, bus_id, kind, notes, serviced_at, next_due_km)
-- `anomalies` (id, bus_id, type, severity, message, lat, lng, ai_explanation, status, created_at) — realtime enabled
-
-All tables: public RLS read + admin-write for demo simplicity (matches existing `incident_reports`/`bus_pings` pattern). Each `CREATE TABLE` followed by required `GRANT` statements.
-
-Seed migration inserts 6 buses, 8 drivers, today's sample roster so the depot screen is populated on first load.
+## Suggested Build Order (if time-boxed)
+1. Demo Mode + Impact Dashboard (4 hrs) — biggest judge impact
+2. Voice Sarthi + Multilingual (3 hrs)
+3. Predictive ETA (2 hrs)
+4. Accessibility + PWA (2 hrs)
+5. Citizen Reporting (2 hrs)
 
 ---
 
-## 4. Wiring
-
-- `/authority` page: swap static alerts → `<AnomalyPanel />`; add anomaly count to KPI strip ("Active Anomalies").
-- Live anomaly persistence: a small `useEffect` in `/authority` inserts new anomalies to the `anomalies` table (debounced) so they appear on reload + via Realtime.
-- Nav: add **Depot** link.
-- Landing page features grid: add "AI Anomaly Detection" + "Paperless Depot Ops" tiles.
-- About page: update judging-criteria row to mention these two features.
-
----
-
-## Technical Details
-
-- AI model: `google/gemini-3-flash-preview` for both `explainAnomaly` (text) and `generateRoster`/`depotCommand` (tools + structured output via `Output.object` with Zod).
-- Anomaly detectors are pure functions, fully unit-testable, run every 2s on the existing `useLiveBuses` hook output — no new polling.
-- All AI calls live in `*.functions.ts` server functions per TanStack rules; no key leakage.
-- Roster generator uses `stepCountIs(50)` for tool-loop safety.
-
----
-
-## Out of Scope (this pass)
-
-- Real auth for the admin role (uses a demo toggle; real `_authenticated/` + role table can come next).
-- Mobile depot app.
-- Push notifications on anomalies (in-app feed only).
+**Which slice should I build first?** Reply with numbers (e.g. "1, 2, 6") or "all in order" and I'll start implementing.
