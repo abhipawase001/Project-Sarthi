@@ -3,10 +3,11 @@ import { Bus, Radio } from "lucide-react";
 
 const links = [
   { to: "/", label: "Overview" },
-  { to: "/live", label: "Live Tracking" },
+  { to: "/live", label: "Live" },
   { to: "/driver", label: "Driver" },
   { to: "/authority", label: "Authority" },
-  { to: "/rewards", label: "Eco Rewards" },
+  { to: "/depot", label: "Depot" },
+  { to: "/rewards", label: "Rewards" },
   { to: "/channels", label: "SMS / IVR" },
   { to: "/about", label: "About" },
 ] as const;

@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      anomalies: {
+        Row: {
+          ai_explanation: string | null
+          bus_id: string
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          message: string
+          severity: string
+          status: string
+          type: string
+        }
+        Insert: {
+          ai_explanation?: string | null
+          bus_id: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          message: string
+          severity?: string
+          status?: string
+          type: string
+        }
+        Update: {
+          ai_explanation?: string | null
+          bus_id?: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          message?: string
+          severity?: string
+          status?: string
+          type?: string
+        }
+        Relationships: []
+      }
       bus_pings: {
         Row: {
           bus_id: string
@@ -50,6 +89,108 @@ export type Database = {
         }
         Relationships: []
       }
+      buses: {
+        Row: {
+          capacity: number
+          created_at: string
+          fuel_type: string
+          health_score: number
+          last_service_at: string | null
+          next_service_km: number | null
+          odometer_km: number
+          reg_no: string
+          route: string | null
+          status: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          fuel_type?: string
+          health_score?: number
+          last_service_at?: string | null
+          next_service_km?: number | null
+          odometer_km?: number
+          reg_no: string
+          route?: string | null
+          status?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          fuel_type?: string
+          health_score?: number
+          last_service_at?: string | null
+          next_service_km?: number | null
+          odometer_km?: number
+          reg_no?: string
+          route?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      drivers: {
+        Row: {
+          created_at: string
+          id: string
+          license_expiry: string | null
+          license_no: string | null
+          name: string
+          phone: string | null
+          rating: number
+          role: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          license_expiry?: string | null
+          license_no?: string | null
+          name: string
+          phone?: string | null
+          rating?: number
+          role?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          license_expiry?: string | null
+          license_no?: string | null
+          name?: string
+          phone?: string | null
+          rating?: number
+          role?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      fuel_logs: {
+        Row: {
+          bus_reg: string
+          cost: number | null
+          id: string
+          liters: number
+          odometer_km: number | null
+          refueled_at: string
+        }
+        Insert: {
+          bus_reg: string
+          cost?: number | null
+          id?: string
+          liters: number
+          odometer_km?: number | null
+          refueled_at?: string
+        }
+        Update: {
+          bus_reg?: string
+          cost?: number | null
+          id?: string
+          liters?: number
+          odometer_km?: number | null
+          refueled_at?: string
+        }
+        Relationships: []
+      }
       incident_reports: {
         Row: {
           bus_id: string | null
@@ -83,6 +224,133 @@ export type Database = {
           message?: string | null
           status?: string
           stop_id?: string | null
+        }
+        Relationships: []
+      }
+      roster: {
+        Row: {
+          bus_reg: string | null
+          conductor_id: string | null
+          created_at: string
+          driver_id: string | null
+          duty_date: string
+          id: string
+          notes: string | null
+          route: string | null
+          shift_end: string
+          shift_start: string
+          status: string
+        }
+        Insert: {
+          bus_reg?: string | null
+          conductor_id?: string | null
+          created_at?: string
+          driver_id?: string | null
+          duty_date?: string
+          id?: string
+          notes?: string | null
+          route?: string | null
+          shift_end: string
+          shift_start: string
+          status?: string
+        }
+        Update: {
+          bus_reg?: string | null
+          conductor_id?: string | null
+          created_at?: string
+          driver_id?: string | null
+          duty_date?: string
+          id?: string
+          notes?: string | null
+          route?: string | null
+          shift_end?: string
+          shift_start?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roster_bus_reg_fkey"
+            columns: ["bus_reg"]
+            isOneToOne: false
+            referencedRelation: "buses"
+            referencedColumns: ["reg_no"]
+          },
+          {
+            foreignKeyName: "roster_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roster_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_logs: {
+        Row: {
+          bus_reg: string
+          id: string
+          kind: string
+          next_due_km: number | null
+          notes: string | null
+          serviced_at: string
+        }
+        Insert: {
+          bus_reg: string
+          id?: string
+          kind: string
+          next_due_km?: number | null
+          notes?: string | null
+          serviced_at?: string
+        }
+        Update: {
+          bus_reg?: string
+          id?: string
+          kind?: string
+          next_due_km?: number | null
+          notes?: string | null
+          serviced_at?: string
+        }
+        Relationships: []
+      }
+      trip_logs: {
+        Row: {
+          bus_reg: string | null
+          distance_km: number | null
+          driver_id: string | null
+          ended_at: string | null
+          fuel_liters: number | null
+          id: string
+          passengers_est: number | null
+          route: string | null
+          started_at: string
+        }
+        Insert: {
+          bus_reg?: string | null
+          distance_km?: number | null
+          driver_id?: string | null
+          ended_at?: string | null
+          fuel_liters?: number | null
+          id?: string
+          passengers_est?: number | null
+          route?: string | null
+          started_at?: string
+        }
+        Update: {
+          bus_reg?: string | null
+          distance_km?: number | null
+          driver_id?: string | null
+          ended_at?: string | null
+          fuel_liters?: number | null
+          id?: string
+          passengers_est?: number | null
+          route?: string | null
+          started_at?: string
         }
         Relationships: []
       }

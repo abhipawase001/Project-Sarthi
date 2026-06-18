@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as DriverRouteImport } from './routes/driver'
+import { Route as DepotRouteImport } from './routes/depot'
 import { Route as ChannelsRouteImport } from './routes/channels'
 import { Route as AuthorityRouteImport } from './routes/authority'
 import { Route as AboutRouteImport } from './routes/about'
@@ -36,6 +37,11 @@ const LiveRoute = LiveRouteImport.update({
 const DriverRoute = DriverRouteImport.update({
   id: '/driver',
   path: '/driver',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DepotRoute = DepotRouteImport.update({
+  id: '/depot',
+  path: '/depot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChannelsRoute = ChannelsRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/authority': typeof AuthorityRoute
   '/channels': typeof ChannelsRoute
+  '/depot': typeof DepotRoute
   '/driver': typeof DriverRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/authority': typeof AuthorityRoute
   '/channels': typeof ChannelsRoute
+  '/depot': typeof DepotRoute
   '/driver': typeof DriverRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/authority': typeof AuthorityRoute
   '/channels': typeof ChannelsRoute
+  '/depot': typeof DepotRoute
   '/driver': typeof DriverRoute
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/authority'
     | '/channels'
+    | '/depot'
     | '/driver'
     | '/live'
     | '/rewards'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/authority'
     | '/channels'
+    | '/depot'
     | '/driver'
     | '/live'
     | '/rewards'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/authority'
     | '/channels'
+    | '/depot'
     | '/driver'
     | '/live'
     | '/rewards'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AuthorityRoute: typeof AuthorityRoute
   ChannelsRoute: typeof ChannelsRoute
+  DepotRoute: typeof DepotRoute
   DriverRoute: typeof DriverRoute
   LiveRoute: typeof LiveRoute
   RewardsRoute: typeof RewardsRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/driver'
       fullPath: '/driver'
       preLoaderRoute: typeof DriverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/depot': {
+      id: '/depot'
+      path: '/depot'
+      fullPath: '/depot'
+      preLoaderRoute: typeof DepotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/channels': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthorityRoute: AuthorityRoute,
   ChannelsRoute: ChannelsRoute,
+  DepotRoute: DepotRoute,
   DriverRoute: DriverRoute,
   LiveRoute: LiveRoute,
   RewardsRoute: RewardsRoute,
@@ -208,13 +229,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

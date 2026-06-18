@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Nav } from "@/components/Nav";
 import { ClientMap } from "@/components/ClientMap";
 import { LiveIncidents } from "@/components/LiveIncidents";
+import { AnomalyPanel } from "@/components/AnomalyPanel";
 import { useLiveBuses } from "@/hooks/useLiveBuses";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, Legend, PieChart, Pie, Cell,
 } from "recharts";
 import { CITY_KPIS, HOURLY_RIDERSHIP, OCCUPANCY_DIST, ROUTE_PERF } from "@/lib/mockData";
-import { Users, Activity, Leaf, AlertTriangle, Clock, TrendingUp, Bus as BusIcon } from "lucide-react";
+import { Users, Activity, Leaf, Clock, Bus as BusIcon } from "lucide-react";
 
 export const Route = createFileRoute("/authority")({
   head: () => ({ meta: [{ title: "Authority Dashboard — Sarthi" }, { name: "description", content: "Fleet command center with live KPIs, ridership analytics and emissions impact." }] }),
@@ -23,12 +24,6 @@ const tooltipStyle = {
 
 function AuthorityPage() {
   const buses = useLiveBuses(2000);
-  const alerts = [
-    { time: "14:02", level: "warn",  msg: "MH17-CD-4521 occupancy HIGH on Malpani route" },
-    { time: "13:54", level: "info",  msg: "Route R2 average delay +3min — traffic on Akole road" },
-    { time: "13:31", level: "ok",    msg: "Driver Vijay M. completed shift, 8 trips" },
-    { time: "13:10", level: "warn",  msg: "Schedule optimizer recommends +1 bus on R1 17:00–19:00" },
-  ];
   return (
     <div className="min-h-screen">
       <Nav />
@@ -53,31 +48,8 @@ function AuthorityPage() {
             <ClientMap buses={buses} />
           </div>
 
-          {/* Alerts feed */}
-          <div className="surface border border-border rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-semibold">Live Alerts</h3>
-              <span className="text-[10px] font-mono text-eco">REAL-TIME</span>
-            </div>
-            <ul className="space-y-2">
-              {alerts.map((a, i) => (
-                <li key={i} className="surface-2 border border-border rounded-xl p-3 flex items-start gap-3">
-                  <div className={`mt-0.5 size-7 rounded-lg grid place-items-center text-xs ${a.level === "warn" ? "bg-accent/15 text-accent" : a.level === "info" ? "bg-primary/15 text-primary" : "bg-eco/15 text-eco"}`}>
-                    {a.level === "warn" ? <AlertTriangle className="size-3.5" /> : a.level === "info" ? <Activity className="size-3.5" /> : "✓"}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm">{a.msg}</div>
-                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">{a.time}</div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 p-3 rounded-xl bg-primary/10 border border-primary/30 text-xs">
-              <div className="flex items-center gap-2 text-primary font-semibold"><TrendingUp className="size-3.5" /> AI Recommendation</div>
-              <p className="mt-1 text-muted-foreground">Deploy reserve bus MH17-OP-6712 on R1 at 17:00 — predicted demand spike of 38% based on weather + college schedule.</p>
-              <button className="mt-2 text-primary font-semibold">Approve dispatch →</button>
-            </div>
-          </div>
+          {/* AI Anomaly Detection */}
+          <AnomalyPanel buses={buses} />
         </div>
 
         {/* Charts row */}
