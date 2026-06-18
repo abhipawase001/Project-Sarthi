@@ -126,6 +126,8 @@ function AuthorityPage() {
           </div>
         </div>
 
+        <LiveIncidents />
+
         <div className="grid lg:grid-cols-3 gap-4">
           <div className="surface border border-border rounded-2xl p-5 lg:col-span-2">
             <h3 className="font-display font-semibold mb-4">Route Performance</h3>
