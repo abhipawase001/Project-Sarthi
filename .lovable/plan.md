@@ -1,68 +1,45 @@
-# Hackathon Winning-Edge Plan
+## Drishti — Competition Submission PDF (fills the Ideathon Track 3 template)
 
-You already have the core (Live map, SOS, Sarthi chat, Anomaly AI, Depot console, RLS). To stand out at India Runs judging, add features that hit the rubric judges actually score: **Innovation, Social Impact, Technical Depth, Demo Polish, Scalability**.
+Produce a single judge-ready PDF that mirrors your uploaded `IDEATHON_TRACK_3.pptx` template, with every required slide filled in for **Project Drishti** (the smart public-transit + depot-automation app currently in this repo). Output: `/mnt/documents/drishti-ideathon-track3.pdf`, surfaced via `<presentation-artifact>` for one-click download.
 
-## 1. Judge Demo Mode (highest ROI)
-A `/demo` route with a scripted 90-second walkthrough:
-- "Play Scenario" buttons: *Bus breakdown*, *Route deviation*, *Crowd surge*, *SOS triggered*
-- Auto-drives the map, fires anomalies, triggers Sarthi alerts, shows AI response live
-- Floating narrator card explains each step
-- Wins because judges see every feature in one click without you fumbling.
+### Approach
+1. Unpack the uploaded `.pptx` template so the original **Redrob × Hack2Skill branding, layout, fonts and background images stay intact** — we edit the XML in place rather than rebuilding from scratch. This guarantees the deck visually matches the official template.
+2. Replace the placeholder text on each content slide with Drishti-specific copy (see content map below).
+3. Add a small Appendix (≤5 slides) with architecture, data model, security model, and AI-feature roadmap — all allowed by the template's own rules.
+4. Repack to `.pptx`, convert to PDF via LibreOffice, then render every page to JPEG and visually QA each one (overflow, clipping, contrast, leftover placeholders). Iterate until clean.
 
-## 2. Voice-First Multilingual Sarthi
-- Add Web Speech API mic button → STT → Sarthi → TTS reply
-- Language toggle: Hindi / English / Marathi / Tamil (Gemini handles translation)
-- Huge accessibility + Bharat-first story for judges
+### Slide-by-slide content map
+| # | Template slide | Drishti content |
+|---|---|---|
+| 1 | Cover (India.Runs / Track 3) | unchanged |
+| 2 | Redrob context | unchanged |
+| 3 | "Important" | unchanged |
+| 4 | Team / Problem statement | **Team Name**, **Problem Statement: "Unreliable, opaque public transit + paperwork-choked bus depots"**, **Team Members** (placeholders you can edit) |
+| 5 | Problem We Want To Solve | Daily commuter pain (no live ETAs, safety gaps, language barriers) + depot pain (manual rosters, fuel/service logbooks). Who: 50M+ daily bus riders, drivers, depot managers, transit authorities. Why it matters: time lost, safety, ₹ wasted, no data trail. |
+| 6 | Idea Overview | Drishti = AI-native transit OS: Live map + Sarthi chat + Anomaly AI + Paperless Depot + Authority dashboard. Redrob fit: plugs into Redrob's AI workflow + recommendation layer; depot module mirrors Redrob's hiring/productivity DNA for transit ops. |
+| 7 | (visual divider) | Hero screenshot/illustration of Drishti map + chat |
+| 8 | User Journey & Experience | 3 personas walkthrough: **Commuter** (open app → see live bus → ask Sarthi in Hindi → SOS if needed), **Driver** (start shift → roster auto-assigns → anomalies flagged), **Depot Manager** (one console for buses/drivers/roster/fuel/service — zero paperwork). |
+| 9 | (visual divider) | Screenshot grid: /, /authority, /depot, /demo, /impact |
+| 10 | Accessibility & Inclusivity | Multilingual Sarthi (HI/EN/MR/TA roadmap), high-contrast + screen-reader announcements, Divyangjan-friendly bus filter, offline/SMS fallback for low-bandwidth users, voice-first option. |
+| 11 | (visual divider) | Impact KPI mock (CO₂ saved, 31% wait reduction, ₹14.2L savings, SDG 9/11) |
+| 12 | (visual divider) | Architecture sketch |
+| 13 | Appendix intro | kept as-is |
+| 14 | Thank You | kept as-is |
 
-## 3. Predictive ETA & Crowd Forecast
-- New `src/lib/eta-ai.functions.ts`: Gemini + historical `HOURLY_RIDERSHIP` predicts:
-  - Arrival ETA per stop (with confidence band)
-  - "Bus will be crowded in 15 min" warnings on Live map
-- Show as colored pills on stop markers
+### Appendix slides we add (within the 5-slide allowance)
+- **A1 — Architecture**: TanStack Start + React 19, Lovable Cloud (Postgres+Auth+Storage), Lovable AI Gateway (Gemini), server functions vs edge routes.
+- **A2 — Data Model**: tables (buses, drivers, roster, anomalies, trip_logs, fuel_logs, service_logs, user_roles) + `public_drivers` sanitized view.
+- **A3 — Security**: RLS on every table, `app_role` enum (admin/dispatcher/viewer), `has_role`/`has_any_role` security-definer fns, PII hidden from anon.
+- **A4 — AI Features**: Sarthi chat, Anomaly severity scoring, Depot AI assistants, Predictive ETA + Voice (roadmap).
+- **A5 — Roadmap & Ask**: Voice Sarthi, PWA+SMS, Citizen Reporting, Predictive ETA, pilot ask.
 
-## 4. Accessibility Layer (Divyangjan)
-- High-contrast mode toggle
-- Screen-reader-friendly bus announcements ("Bus 42 arriving platform 3")
-- Wheelchair-accessible bus filter
-- Strong DEI judge points
+### Out of scope
+- No app code changes.
+- No new routes, components, or migrations.
+- Won't change the template's branded slides (1, 2, 3, 13, 14).
 
-## 5. Offline PWA + SMS Fallback
-- Add `manifest.webmanifest` + service worker → installable, works offline
-- "Last known location" cache for low-network areas
-- Optional: server route `/api/public/sms-eta` that returns plain-text ETA (mention Twilio in pitch even if not wired)
+### Things you can tweak after I generate it
+- Team name + member names on slide 4 (I'll insert clearly marked placeholders).
+- Any wording on slides 5/6/8/10 — easy to swap before submission.
 
-## 6. Impact Dashboard (`/impact`)
-Public-facing KPIs auto-computed from DB:
-- CO₂ saved vs car trips
-- Avg wait time reduced
-- SOS response time
-- Anomalies auto-resolved by AI
-Gives judges concrete numbers to quote.
-
-## 7. Citizen Reporting + Gamification
-- "Report" button on each bus: overcrowded / rash driving / AC broken
-- Points + leaderboard for verified reports
-- Feeds depot console as a new data source
-
-## 8. Pitch Polish
-- Landing page hero: 1 killer line + animated stats counter
-- `/about` → add architecture diagram (Mermaid) + tech stack badges
-- README with problem→solution→impact→roadmap
-- 30-sec Loom-style auto-play video on landing (optional)
-
-## Technical Notes
-- All AI via existing Lovable AI Gateway (`google/gemini-3-flash-preview`); no new keys.
-- New tables: `citizen_reports`, `impact_metrics` (RLS + GRANTs per project rules).
-- New routes: `/demo`, `/impact`, `/report`. PWA via `vite-plugin-pwa`.
-- Voice: browser-native APIs, no extra deps.
-
-## Suggested Build Order (if time-boxed)
-1. Demo Mode + Impact Dashboard (4 hrs) — biggest judge impact
-2. Voice Sarthi + Multilingual (3 hrs)
-3. Predictive ETA (2 hrs)
-4. Accessibility + PWA (2 hrs)
-5. Citizen Reporting (2 hrs)
-
----
-
-**Which slice should I build first?** Reply with numbers (e.g. "1, 2, 6") or "all in order" and I'll start implementing.
+Reply **approve** (or "go") and I'll generate the PDF.
