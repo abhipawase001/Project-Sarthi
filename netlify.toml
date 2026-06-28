@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist/client"
+
+[context.production.environment]
+  NODE_ENV = "production"
+
+[dev]
+  command = "npm run dev"
+  port = 5173
