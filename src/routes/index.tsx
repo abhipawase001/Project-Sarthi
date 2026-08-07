@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Bus, MapPin, Radio, Smartphone, Brain, Leaf, MessageSquare, Trophy,
@@ -34,6 +35,18 @@ const stats = [
   { value: "20%", label: "Projected CO₂ reduction",    icon: Leaf,        color: "text-eco" },
   { value: "4.3k", label: "Pilot daily ridership",     icon: Users,       color: "text-primary" },
 ];
+
+/** Client-only clock — avoids an SSR/client time mismatch. */
+function LiveClock() {
+  const [time, setTime] = useState<string | null>(null);
+  useEffect(() => {
+    const tick = () => setTime(new Date().toLocaleTimeString());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <div className="text-xs font-mono text-muted-foreground">{time ?? "--:--:--"}</div>;
+}
 
 function Landing() {
   return (
@@ -81,7 +94,7 @@ function Landing() {
                 <span className="relative inline-block size-2 rounded-full bg-eco pulse-dot" />
                 Live · Sangamner Pilot
               </div>
-              <div className="text-xs font-mono text-muted-foreground">{new Date().toLocaleTimeString()}</div>
+              <LiveClock />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <Kpi label="Buses Live"        value={CITY_KPIS.busesLive} suffix={`/ ${CITY_KPIS.totalBuses}`} />
