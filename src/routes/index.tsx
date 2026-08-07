@@ -36,6 +36,18 @@ const stats = [
   { value: "4.3k", label: "Pilot daily ridership",     icon: Users,       color: "text-primary" },
 ];
 
+/** Client-only clock — avoids an SSR/client time mismatch. */
+function LiveClock() {
+  const [time, setTime] = useState<string | null>(null);
+  useEffect(() => {
+    const tick = () => setTime(new Date().toLocaleTimeString());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <div className="text-xs font-mono text-muted-foreground">{time ?? "--:--:--"}</div>;
+}
+
 function Landing() {
   return (
     <div className="min-h-screen">
