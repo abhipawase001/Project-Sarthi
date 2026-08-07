@@ -332,6 +332,81 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_alerts: {
+        Row: {
+          bus_id: string
+          created_at: string
+          id: string
+          phone_hash: string
+          route: string | null
+          status: string
+          stop_id: string | null
+          stop_name: string | null
+          threshold_min: number
+          updated_at: string
+        }
+        Insert: {
+          bus_id: string
+          created_at?: string
+          id?: string
+          phone_hash: string
+          route?: string | null
+          status?: string
+          stop_id?: string | null
+          stop_name?: string | null
+          threshold_min?: number
+          updated_at?: string
+        }
+        Update: {
+          bus_id?: string
+          created_at?: string
+          id?: string
+          phone_hash?: string
+          route?: string | null
+          status?: string
+          stop_id?: string | null
+          stop_name?: string | null
+          threshold_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          lang: string
+          last_buses: Json | null
+          phone_hash: string
+          route: string | null
+          stop_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lang?: string
+          last_buses?: Json | null
+          phone_hash: string
+          route?: string | null
+          stop_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lang?: string
+          last_buses?: Json | null
+          phone_hash?: string
+          route?: string | null
+          stop_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trip_logs: {
         Row: {
           bus_reg: string | null
