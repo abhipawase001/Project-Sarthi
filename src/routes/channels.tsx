@@ -49,15 +49,17 @@ function ChannelsPage() {
       <Nav />
       <div className="mx-auto max-w-7xl px-6 py-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Inclusive Access · SMS · WhatsApp · IVR</h1>
-          <p className="text-sm text-muted-foreground max-w-2xl">40% of tier-2 commuters don't have smartphones. Sarthi reaches them on whatever phone they own — try each channel below.</p>
+          <h1 className="text-3xl font-bold">SMS Bus ETA · WhatsApp · IVR</h1>
+          <p className="text-sm text-muted-foreground max-w-2xl">40% of tier-2 commuters don't have smartphones. Drishti reaches them on whatever phone they own — pick a route and stop below and get the exact SMS a feature phone receives.</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-4">
-          <ChatBox title="SMS · Send to 56161" subtitle="Works on any phone, no data needed" icon={MessageSquare} placeholder="BUS MARKET" />
-          <ChatBox title="WhatsApp Bot · +91 90000 56161" subtitle="Rich replies with map links" icon={Smartphone} placeholder="Hi Sarthi" />
+        <SmsEtaConsole />
+
+        <div className="grid lg:grid-cols-2 gap-4">
+          <ChatBox title="WhatsApp Bot · +91 90000 56161" subtitle="Rich replies with map links" icon={Smartphone} placeholder="Hi Drishti" />
           <IvrBox />
         </div>
+
 
         <div className="surface border border-border rounded-2xl p-6">
           <h2 className="font-display text-xl font-bold mb-3">How the inclusion stack works</h2>
