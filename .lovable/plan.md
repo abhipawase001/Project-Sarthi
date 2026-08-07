@@ -1,29 +1,59 @@
-# Offline & Low-Connectivity Mode for Drishti
+# SMS Bus ETA — Route + Stop
 
-Tier-2 India riders often have patchy 2G or no data at all. Right now the app needs a live connection for everything: map tiles, bus positions, AI chat, SOS. This plan makes Drishti usable when the network drops — and makes that visibly part of the pitch.
+Let commuters get live bus ETAs over plain SMS: choose a route, then a stop, and receive the next 3 buses with arrival times, seats and delay status. Works on any feature phone, no data needed.
 
-## What users get
+## The SMS conversation
 
-1. **Installable app** — Drishti can be added to a phone home screen with its own icon and splash screen, so it opens like a native app.
-2. **Works offline** — the app shell, routes, stops and last-known timetable open instantly with no network. A clear "Offline — showing last synced data" banner with the sync timestamp appears instead of stale numbers pretending to be live.
-3. **Offline timetable & stop finder** — static route/stop/schedule data is cached on first visit, so a rider without data can still see which bus runs from which stop and its scheduled times.
-4. **Last-known live snapshot** — the most recent bus positions, ETAs and seat counts are stored on the device and shown greyed-out with "as of HH:MM" when offline.
-5. **Queued actions (offline SOS & incident reports)** — pressing SOS or filing an incident with no network saves it on the device and auto-sends the moment connectivity returns, with a "1 pending, will send when online" indicator.
-6. **Driver console offline-first** — drivers lose signal mid-route constantly. Trip logs, fuel entries and stop check-ins are queued locally and flushed on reconnect.
-7. **Low-data / 2G mode** — a toggle that stops map tile loading (list view only), slows the live poll, and disables AI calls, cutting data use dramatically.
-8. **Zero-internet fallback signposting** — the existing SMS/IVR/WhatsApp channels page becomes the explicit "no smartphone / no data" path, surfaced from the offline banner itself.
+```text
+User:   ETA                (or HI / BUS / any greeting)
+Drishti: DRISHTI ETA
+         Reply route no:
+         1 R1 Depot-Malpani
+         2 R2 Hospital-Akole
+         3 R3 Pravara Circuit
 
-## Judging angle
+User:   1
+Drishti: R1 stops - reply no:
+         1 Sangamner Depot
+         2 Market Yard
+         3 Sangamner College
+         4 Malpani Industrial
 
-Offline-first is a strong inclusion story for an India-focused hackathon: it turns "nice app" into "works for the person standing at a village stop with one bar". The demo can toggle airplane mode live and show the app still working plus a queued SOS firing on reconnect.
+User:   3
+Drishti: R1 -> Sangamner College
+         1) MH17-AB-1023 4 min - 14 seats
+         2) MH17-CD-4521 12 min - 3 seats FULL
+         3) MH17-KL-3344 21 min - 17 seats
+         Updated 11:42. Reply A to get an alert, M for menu.
+```
 
-## Technical approach
+Shortcuts for repeat users: `ETA R1 COLLEGE` skips both menus. `M` returns to the menu, `A` sets a one-time "bus 5 min away" alert. Replies are capped at 160 characters so they fit a single SMS. Hindi/Marathi replies when the user texts in those scripts or sends `H` / `M R`.
 
-- **PWA**: add `public/manifest.webmanifest` (name, standalone, theme `#0b1220`, icons) plus head tags in `src/routes/__root.tsx`, and app icons in `public/`.
-- **Service worker**: `vite-plugin-pwa` with `generateSW`, `registerType: "autoUpdate"`, `injectRegister: null`, `devOptions.enabled: false`. Registration goes through one guarded wrapper module that refuses to register in dev, inside an iframe, on Lovable preview hostnames, or with `?sw=off` (unregistering any matching `/sw.js` in those cases). Navigations use `NetworkFirst`; hashed same-origin assets use `CacheFirst`; `/~oauth` excluded from navigation fallback. Offline in the Lovable editor preview is intentionally disabled — it only works on the published app.
-- **Map tiles**: runtime `CacheFirst` cache for OpenStreetMap tiles with a capped entry count and expiry, so previously viewed areas render offline.
-- **Local persistence**: `localStorage` for the low-data toggle and last-synced snapshot; IndexedDB (small wrapper in `src/lib/offlineQueue.ts`) for the pending-action queue since SOS payloads must survive reload.
-- **Sync**: a `useOnlineStatus` hook (`navigator.onLine` + `online`/`offline` events, read in `useEffect` only) drives the banner; on reconnect the queue flushes to the existing server functions / Supabase inserts, deduped by client-generated UUID so retries can't double-post.
-- **AI guards**: `askSarthi`, `explainAnomaly` and the depot command bar short-circuit with a friendly "needs internet" message when offline instead of throwing.
-- **Live hook**: `useLiveBuses` writes each tick's snapshot to storage and, when offline or in low-data mode, stops stepping and serves the stored snapshot with its timestamp.
-- **Hydration safety**: all clock/timestamp rendering (currently a locale time string on the landing page, and similar spots in driver/incidents/anomaly views) moves behind `useEffect`/`useHydrated` so server and client HTML match.
+## What gets built
+
+**1. Shared SMS engine (server-side)**
+A single stateless conversation engine that takes the sender's phone number and message text and returns the reply text. It keeps a short-lived session (which route the user picked) so a bare `3` is understood. ETAs come from the same live bus data the map uses, so SMS and app never disagree.
+
+**2. On-screen SMS simulator (works today, free)**
+The existing SMS card on the Channels page is rewired to call the real engine instead of the local keyword stub — so what judges see on screen is byte-for-byte what a real phone would receive. Added next to it: a **route/stop picker** that composes the correct SMS for you and shows the exact reply, plus a "what the phone receives" preview.
+
+**3. Real SMS path (flip on when a provider is connected)**
+- A public webhook endpoint that an SMS provider posts inbound texts to, runs the same engine, and returns the reply.
+- Outbound send helper for alerts.
+- The provider (Twilio or GatewayAPI) is connected as a connector; until it is connected, the endpoint stays live but responds in dry-run mode and the simulator is the demo surface. Real SMS costs money per message and needs a provider account + number, so it is opt-in.
+
+**4. Alerts**
+`A` after an ETA reply stores a one-time alert (phone + bus + stop). When that bus is ~5 minutes out, an outbound SMS fires. In simulator mode the alert is shown on-screen instead of sent.
+
+## Technical notes
+
+- `src/lib/sms-engine.ts` — pure functions: `parseSms(text, session)` -> `{ reply, nextSession }`, route/stop matching with fuzzy name lookup, 160-char formatter, language detection.
+- `src/lib/sms.functions.ts` — `createServerFn` wrapper used by the simulator UI.
+- `src/routes/api/public/sms.ts` — provider webhook (`POST`), validates payload with Zod, verifies the provider signature/shared secret before replying, never echoes PII.
+- New tables: `sms_sessions` (phone hash, route, stop, expires_at) and `sms_alerts` (phone hash, bus, stop, status). Phone numbers stored hashed; RLS locks both to service/staff only — no public reads.
+- Channels page: replace the local `reply()` stub with engine calls; add the route/stop picker component.
+- Outbound sending goes through the connector gateway once Twilio/GatewayAPI is linked.
+
+## Out of scope
+
+Two-way alerts beyond a single "bus approaching" ping, and buying/verifying an SMS short code.
