@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Bus, MapPin, Radio, Smartphone, Brain, Leaf, MessageSquare, Trophy,
