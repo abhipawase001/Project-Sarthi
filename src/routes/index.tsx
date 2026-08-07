@@ -81,7 +81,7 @@ function Landing() {
                 <span className="relative inline-block size-2 rounded-full bg-eco pulse-dot" />
                 Live · Sangamner Pilot
               </div>
-              <div className="text-xs font-mono text-muted-foreground">{new Date().toLocaleTimeString()}</div>
+              <LiveClock />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <Kpi label="Buses Live"        value={CITY_KPIS.busesLive} suffix={`/ ${CITY_KPIS.totalBuses}`} />
