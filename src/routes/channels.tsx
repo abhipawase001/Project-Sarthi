@@ -3,9 +3,19 @@ import { useState } from "react";
 import { Nav } from "@/components/Nav";
 import { MessageSquare, Phone, Send, Smartphone } from "lucide-react";
 import { INITIAL_BUSES, STOPS } from "@/lib/mockData";
+import { SmsEtaConsole } from "@/components/SmsEtaConsole";
 
 export const Route = createFileRoute("/channels")({
-  head: () => ({ meta: [{ title: "SMS · WhatsApp · IVR — Sarthi" }, { name: "description", content: "Try the inclusive multi-channel access: SMS short-code, WhatsApp bot and IVR for feature-phone users." }] }),
+  head: () => ({
+    meta: [
+      { title: "SMS Bus ETA · WhatsApp · IVR — Drishti" },
+      { name: "description", content: "Get live bus ETAs over plain SMS: pick a route and stop, get the next 3 buses. Plus WhatsApp bot and IVR for feature-phone users." },
+      { property: "og:title", content: "SMS Bus ETA — Drishti" },
+      { property: "og:description", content: "Route + stop over SMS returns the next 3 buses with arrival time and seats. No smartphone, no data needed." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: ChannelsPage,
 });
 
@@ -31,6 +41,7 @@ function reply(input: string): string {
   if (q === "SOS") return "🚨 SOS received. Depot notified. Stay safe — operator calling in 30s.";
   return "Sorry, I didn't get that. Reply HELP for menu.";
 }
+
 
 function ChannelsPage() {
   return (
