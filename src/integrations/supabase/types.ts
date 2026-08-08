@@ -227,6 +227,81 @@ export type Database = {
         }
         Relationships: []
       }
+      ivr_audio_cache: {
+        Row: {
+          audio_base64: string
+          created_at: string
+          format: string
+          id: string
+          lang: string
+          phrase_key: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          audio_base64: string
+          created_at?: string
+          format?: string
+          id?: string
+          lang: string
+          phrase_key: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          audio_base64?: string
+          created_at?: string
+          format?: string
+          id?: string
+          lang?: string
+          phrase_key?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ivr_calls: {
+        Row: {
+          attempts: number
+          call_hash: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          lang: string
+          phone_hash: string | null
+          route: string | null
+          state: string
+          stop_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          call_hash: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          lang?: string
+          phone_hash?: string | null
+          route?: string | null
+          state?: string
+          stop_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          call_hash?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          lang?: string
+          phone_hash?: string | null
+          route?: string | null
+          state?: string
+          stop_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       roster: {
         Row: {
           bus_reg: string | null
