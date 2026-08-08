@@ -57,8 +57,10 @@ function ChannelsPage() {
 
         <div className="grid lg:grid-cols-2 gap-4">
           <ChatBox title="WhatsApp Bot · +91 90000 56161" subtitle="Rich replies with map links" icon={Smartphone} placeholder="Hi Drishti" />
-          <IvrBox />
+          <IvrConsole />
         </div>
+
+
 
 
         <div className="surface border border-border rounded-2xl p-6">
