@@ -1,28 +1,64 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { ClientMap } from "@/components/ClientMap";
 import { useLiveBuses } from "@/hooks/useLiveBuses";
-import { Play, Pause, AlertTriangle, Battery, Wifi, MapPin, Users, Gauge, Power } from "lucide-react";
+import { ROUTES, STOPS, type Bus } from "@/lib/mockData";
+import { Play, Pause, AlertTriangle, Battery, Wifi, MapPin, Users, Gauge, Power, Bus as BusIcon, Route as RouteIcon } from "lucide-react";
 
 export const Route = createFileRoute("/driver")({
   head: () => ({ meta: [{ title: "Driver App — Sarthi" }, { name: "description", content: "Simulated driver console: shift control, GPS streaming, occupancy report, SOS." }] }),
   component: DriverPage,
 });
 
+const LS_BUS = "sarthi.driver.busId";
+const LS_ROUTE = "sarthi.driver.route";
+
 function DriverPage() {
   const buses = useLiveBuses(1500);
-  const me = buses[0];
   const [online, setOnline] = useState(true);
   const [shift, setShift] = useState(false);
   const [occ, setOcc] = useState<"low" | "medium" | "high">("medium");
   const [battery, setBattery] = useState(78);
   const [sosCount, setSosCount] = useState(0);
+  const [busId, setBusId] = useState<string | null>(null);
+  const [routeId, setRouteId] = useState<string | null>(null);
+
+  // Restore last selection after mount (avoids SSR hydration mismatch).
+  useEffect(() => {
+    const b = localStorage.getItem(LS_BUS);
+    const r = localStorage.getItem(LS_ROUTE);
+    if (b) setBusId(b);
+    if (r) setRouteId(r);
+  }, []);
+
+  const base = buses.find((b) => b.id === busId) ?? buses[0];
+  const activeRoute = (routeId && routeId in ROUTES ? routeId : base.route) as keyof typeof ROUTES;
+
+  const me: Bus = useMemo(() => {
+    if (activeRoute === base.route) return base;
+    const r = ROUTES[activeRoute];
+    const stops = r.path.map((sid) => STOPS.find((s) => s.id === sid)!);
+    const next = stops[Math.floor(Date.now() / 20000) % stops.length];
+    return { ...base, route: activeRoute, routeName: r.name, nextStop: next.name };
+  }, [base, activeRoute]);
+
+  const selectBus = (id: string) => {
+    setBusId(id);
+    localStorage.setItem(LS_BUS, id);
+    const b = buses.find((x) => x.id === id);
+    if (b) { setRouteId(b.route); localStorage.setItem(LS_ROUTE, b.route); }
+  };
+  const selectRoute = (id: string) => {
+    setRouteId(id);
+    localStorage.setItem(LS_ROUTE, id);
+  };
 
   useEffect(() => {
     const t = setInterval(() => setBattery((b) => Math.max(8, b - 0.05)), 4000);
     return () => clearInterval(t);
   }, []);
+
 
   return (
     <div className="min-h-screen">
@@ -52,6 +88,38 @@ function DriverPage() {
                   <div className="font-display text-xl font-bold mt-1">{me.driver}</div>
                   <div className="font-mono text-xs text-primary">{me.id} · {me.routeName}</div>
                 </div>
+
+                {/* Bus + route selection */}
+                <div className="mx-5 mt-4 grid grid-cols-2 gap-2">
+                  <label className="surface-2 rounded-xl p-2.5 border border-border">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground"><BusIcon className="size-3" />Bus</span>
+                    <select
+                      value={me.id}
+                      disabled={shift}
+                      onChange={(e) => selectBus(e.target.value)}
+                      className="mt-1 w-full bg-transparent font-mono text-xs outline-none disabled:opacity-50"
+                    >
+                      {buses.map((b) => (
+                        <option key={b.id} value={b.id} className="bg-background">{b.id} · {b.status}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="surface-2 rounded-xl p-2.5 border border-border">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground"><RouteIcon className="size-3" />Route</span>
+                    <select
+                      value={activeRoute}
+                      disabled={shift}
+                      onChange={(e) => selectRoute(e.target.value)}
+                      className="mt-1 w-full bg-transparent font-mono text-xs outline-none disabled:opacity-50"
+                    >
+                      {Object.entries(ROUTES).map(([rid, r]) => (
+                        <option key={rid} value={rid} className="bg-background">{rid} · {r.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {shift && <p className="mx-5 mt-2 text-[10px] text-muted-foreground">Locked during an active shift · end shift to change.</p>}
+
 
                 {/* Shift toggle */}
                 <button
@@ -99,7 +167,7 @@ function DriverPage() {
           {/* Map showing me + telemetry */}
           <div className="space-y-4">
             <div className="surface border border-border rounded-2xl overflow-hidden h-[460px]">
-              <ClientMap buses={[me]} />
+              <ClientMap buses={[me]} selectedRoute={activeRoute} />
             </div>
             <div className="grid md:grid-cols-3 gap-3">
               <Stat label="Trips today" value="6" />
