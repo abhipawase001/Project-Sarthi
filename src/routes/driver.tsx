@@ -167,7 +167,7 @@ function DriverPage() {
           {/* Map showing me + telemetry */}
           <div className="space-y-4">
             <div className="surface border border-border rounded-2xl overflow-hidden h-[460px]">
-              <ClientMap buses={[me]} />
+              <ClientMap buses={[me]} selectedRoute={activeRoute} />
             </div>
             <div className="grid md:grid-cols-3 gap-3">
               <Stat label="Trips today" value="6" />
