@@ -4,6 +4,7 @@ import { Nav } from "@/components/Nav";
 import { MessageSquare, Phone, Send, Smartphone } from "lucide-react";
 import { INITIAL_BUSES, STOPS } from "@/lib/mockData";
 import { SmsEtaConsole } from "@/components/SmsEtaConsole";
+import { IvrConsole } from "@/components/IvrConsole";
 
 export const Route = createFileRoute("/channels")({
   head: () => ({
