@@ -1,28 +1,64 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { ClientMap } from "@/components/ClientMap";
 import { useLiveBuses } from "@/hooks/useLiveBuses";
-import { Play, Pause, AlertTriangle, Battery, Wifi, MapPin, Users, Gauge, Power } from "lucide-react";
+import { ROUTES, STOPS, type Bus } from "@/lib/mockData";
+import { Play, Pause, AlertTriangle, Battery, Wifi, MapPin, Users, Gauge, Power, Bus as BusIcon, Route as RouteIcon } from "lucide-react";
 
 export const Route = createFileRoute("/driver")({
   head: () => ({ meta: [{ title: "Driver App — Sarthi" }, { name: "description", content: "Simulated driver console: shift control, GPS streaming, occupancy report, SOS." }] }),
   component: DriverPage,
 });
 
+const LS_BUS = "sarthi.driver.busId";
+const LS_ROUTE = "sarthi.driver.route";
+
 function DriverPage() {
   const buses = useLiveBuses(1500);
-  const me = buses[0];
   const [online, setOnline] = useState(true);
   const [shift, setShift] = useState(false);
   const [occ, setOcc] = useState<"low" | "medium" | "high">("medium");
   const [battery, setBattery] = useState(78);
   const [sosCount, setSosCount] = useState(0);
+  const [busId, setBusId] = useState<string | null>(null);
+  const [routeId, setRouteId] = useState<string | null>(null);
+
+  // Restore last selection after mount (avoids SSR hydration mismatch).
+  useEffect(() => {
+    const b = localStorage.getItem(LS_BUS);
+    const r = localStorage.getItem(LS_ROUTE);
+    if (b) setBusId(b);
+    if (r) setRouteId(r);
+  }, []);
+
+  const base = buses.find((b) => b.id === busId) ?? buses[0];
+  const activeRoute = (routeId && routeId in ROUTES ? routeId : base.route) as keyof typeof ROUTES;
+
+  const me: Bus = useMemo(() => {
+    if (activeRoute === base.route) return base;
+    const r = ROUTES[activeRoute];
+    const stops = r.path.map((sid) => STOPS.find((s) => s.id === sid)!);
+    const next = stops[Math.floor(Date.now() / 20000) % stops.length];
+    return { ...base, route: activeRoute, routeName: r.name, nextStop: next.name };
+  }, [base, activeRoute]);
+
+  const selectBus = (id: string) => {
+    setBusId(id);
+    localStorage.setItem(LS_BUS, id);
+    const b = buses.find((x) => x.id === id);
+    if (b) { setRouteId(b.route); localStorage.setItem(LS_ROUTE, b.route); }
+  };
+  const selectRoute = (id: string) => {
+    setRouteId(id);
+    localStorage.setItem(LS_ROUTE, id);
+  };
 
   useEffect(() => {
     const t = setInterval(() => setBattery((b) => Math.max(8, b - 0.05)), 4000);
     return () => clearInterval(t);
   }, []);
+
 
   return (
     <div className="min-h-screen">
