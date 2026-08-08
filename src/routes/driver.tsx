@@ -89,6 +89,38 @@ function DriverPage() {
                   <div className="font-mono text-xs text-primary">{me.id} · {me.routeName}</div>
                 </div>
 
+                {/* Bus + route selection */}
+                <div className="mx-5 mt-4 grid grid-cols-2 gap-2">
+                  <label className="surface-2 rounded-xl p-2.5 border border-border">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground"><BusIcon className="size-3" />Bus</span>
+                    <select
+                      value={me.id}
+                      disabled={shift}
+                      onChange={(e) => selectBus(e.target.value)}
+                      className="mt-1 w-full bg-transparent font-mono text-xs outline-none disabled:opacity-50"
+                    >
+                      {buses.map((b) => (
+                        <option key={b.id} value={b.id} className="bg-background">{b.id} · {b.status}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="surface-2 rounded-xl p-2.5 border border-border">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground"><RouteIcon className="size-3" />Route</span>
+                    <select
+                      value={activeRoute}
+                      disabled={shift}
+                      onChange={(e) => selectRoute(e.target.value)}
+                      className="mt-1 w-full bg-transparent font-mono text-xs outline-none disabled:opacity-50"
+                    >
+                      {Object.entries(ROUTES).map(([rid, r]) => (
+                        <option key={rid} value={rid} className="bg-background">{rid} · {r.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {shift && <p className="mx-5 mt-2 text-[10px] text-muted-foreground">Locked during an active shift · end shift to change.</p>}
+
+
                 {/* Shift toggle */}
                 <button
                   onClick={() => setShift((s) => !s)}
