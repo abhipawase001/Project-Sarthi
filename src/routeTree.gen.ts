@@ -21,6 +21,7 @@ import { Route as AuthorityRouteImport } from './routes/authority'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicSmsRouteImport } from './routes/api/public/sms'
+import { Route as ApiPublicIvrAudioRouteImport } from './routes/api/public/ivr-audio'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -82,6 +83,11 @@ const ApiPublicSmsRoute = ApiPublicSmsRouteImport.update({
   path: '/api/public/sms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIvrAudioRoute = ApiPublicIvrAudioRouteImport.update({
+  id: '/api/public/ivr-audio',
+  path: '/api/public/ivr-audio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/ivr-audio': typeof ApiPublicIvrAudioRoute
   '/api/public/sms': typeof ApiPublicSmsRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/ivr-audio': typeof ApiPublicIvrAudioRoute
   '/api/public/sms': typeof ApiPublicSmsRoute
 }
 export interface FileRoutesById {
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/live': typeof LiveRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/ivr-audio': typeof ApiPublicIvrAudioRoute
   '/api/public/sms': typeof ApiPublicSmsRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/rewards'
     | '/sitemap.xml'
+    | '/api/public/ivr-audio'
     | '/api/public/sms'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/rewards'
     | '/sitemap.xml'
+    | '/api/public/ivr-audio'
     | '/api/public/sms'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/rewards'
     | '/sitemap.xml'
+    | '/api/public/ivr-audio'
     | '/api/public/sms'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   LiveRoute: typeof LiveRoute
   RewardsRoute: typeof RewardsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicIvrAudioRoute: typeof ApiPublicIvrAudioRoute
   ApiPublicSmsRoute: typeof ApiPublicSmsRoute
 }
 
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSmsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ivr-audio': {
+      id: '/api/public/ivr-audio'
+      path: '/api/public/ivr-audio'
+      fullPath: '/api/public/ivr-audio'
+      preLoaderRoute: typeof ApiPublicIvrAudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -287,18 +307,9 @@ const rootRouteChildren: RootRouteChildren = {
   LiveRoute: LiveRoute,
   RewardsRoute: RewardsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicIvrAudioRoute: ApiPublicIvrAudioRoute,
   ApiPublicSmsRoute: ApiPublicSmsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

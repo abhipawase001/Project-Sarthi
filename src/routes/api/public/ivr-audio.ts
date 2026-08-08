@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/public/ivr-audio")({
 
         try {
           const audio = await speak(text, lang);
-          return new Response(audio.bytes, {
+          return new Response(audio.bytes.slice().buffer as ArrayBuffer, {
             headers: {
               "content-type": audio.contentType,
               "cache-control": "public, max-age=86400",
