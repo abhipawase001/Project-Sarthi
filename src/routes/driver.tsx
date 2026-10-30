@@ -1,18 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { ClientMap } from "@/components/ClientMap";
 import { useLiveBuses } from "@/hooks/useLiveBuses";
 import { ROUTES, STOPS, type Bus } from "@/lib/mockData";
-import { Play, Pause, AlertTriangle, Battery, Wifi, MapPin, Users, Gauge, Power, Bus as BusIcon, Route as RouteIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Play, Pause, AlertTriangle, Battery, Wifi, MapPin, Users, Gauge, Power, Bus as BusIcon, Route as RouteIcon, Satellite, Smartphone } from "lucide-react";
 
 export const Route = createFileRoute("/driver")({
-  head: () => ({ meta: [{ title: "Driver App — Sarthi" }, { name: "description", content: "Simulated driver console: shift control, GPS streaming, occupancy report, SOS." }] }),
+  head: () => ({
+    meta: [
+      { title: "Driver App — Drishti Live GPS" },
+      { name: "description", content: "Turn any phone into a live bus GPS tracker: start a shift and stream real location to the Drishti map." },
+      { property: "og:title", content: "Driver App — Drishti Live GPS" },
+      { property: "og:description", content: "Turn any phone into a live bus GPS tracker for Drishti." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: DriverPage,
 });
 
 const LS_BUS = "sarthi.driver.busId";
 const LS_ROUTE = "sarthi.driver.route";
+const LS_QUEUE = "sarthi.driver.pingQueue";
+
+function haversineKm(a: number, b: number, c: number, d: number) {
+  const R = 6371, r = Math.PI / 180;
+  const x = Math.sin(((c - a) * r) / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(((d - b) * r) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
 
 function DriverPage() {
   const buses = useLiveBuses(1500);
@@ -58,6 +75,71 @@ function DriverPage() {
     const t = setInterval(() => setBattery((b) => Math.max(8, b - 0.05)), 4000);
     return () => clearInterval(t);
   }, []);
+
+  // ---- Real phone GPS streaming ----
+  const [gps, setGps] = useState<{ lat: number; lng: number; acc: number; speed: number; heading: number } | null>(null);
+  const [gpsErr, setGpsErr] = useState<string | null>(null);
+  const [sent, setSent] = useState(0);
+  const [queued, setQueued] = useState(0);
+  const [shareUrl, setShareUrl] = useState("");
+  const latest = useRef({ busId: me.id, route: activeRoute as string, occ, online });
+  latest.current = { busId: me.id, route: activeRoute, occ, online };
+  const gpsRef = useRef(gps);
+  gpsRef.current = gps;
+
+  useEffect(() => { setShareUrl(`${window.location.origin}/driver`); }, []);
+
+  useEffect(() => {
+    if (!shift) return;
+    if (!("geolocation" in navigator)) { setGpsErr("This device has no GPS / location support."); return; }
+    setGpsErr(null);
+    let prev: { lat: number; lng: number; t: number } | null = null;
+    const id = navigator.geolocation.watchPosition(
+      (p) => {
+        const { latitude: lat, longitude: lng, accuracy } = p.coords;
+        let speed = p.coords.speed != null ? p.coords.speed * 3.6 : 0;
+        let heading = p.coords.heading ?? 0;
+        if (prev && p.coords.speed == null) {
+          const dt = (p.timestamp - prev.t) / 3600000;
+          const d = haversineKm(prev.lat, prev.lng, lat, lng);
+          if (dt > 0) speed = d / dt;
+          heading = (Math.atan2(lng - prev.lng, lat - prev.lat) * 180) / Math.PI;
+        }
+        prev = { lat, lng, t: p.timestamp };
+        setGps({ lat, lng, acc: accuracy, speed: Math.min(199, Math.max(0, speed)), heading: ((heading % 360) + 360) % 360 });
+      },
+      (e) => setGpsErr(e.code === 1 ? "Location permission denied — allow location in your browser settings." : e.message),
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
+    );
+    const send = async () => {
+      const g = gpsRef.current;
+      const s = latest.current;
+      if (!g) return;
+      const row = { bus_id: s.busId, route: s.route, lat: g.lat, lng: g.lng, speed: g.speed, heading: g.heading, occupancy: s.occ };
+      const buf: typeof row[] = JSON.parse(localStorage.getItem(LS_QUEUE) || "[]");
+      if (!s.online || !navigator.onLine) {
+        buf.push(row);
+        localStorage.setItem(LS_QUEUE, JSON.stringify(buf.slice(-200)));
+        setQueued(buf.length);
+        return;
+      }
+      const { error } = await supabase.from("bus_pings").insert([...buf, row]);
+      if (error) {
+        buf.push(row);
+        localStorage.setItem(LS_QUEUE, JSON.stringify(buf.slice(-200)));
+        setQueued(buf.length);
+      } else {
+        localStorage.removeItem(LS_QUEUE);
+        setQueued(0);
+        setSent((n) => n + 1 + buf.length);
+      }
+    };
+    const t = setInterval(send, 5000);
+    return () => { navigator.geolocation.clearWatch(id); clearInterval(t); };
+  }, [shift]);
+
+  const meLive: Bus = gps && shift ? { ...me, lat: gps.lat, lng: gps.lng, speed: gps.speed, heading: gps.heading, occupancy: occ } : me;
+
 
 
   return (
@@ -131,10 +213,10 @@ function DriverPage() {
 
                 {/* Live status */}
                 <div className="mx-5 mt-4 grid grid-cols-2 gap-2">
-                  <Tile icon={Gauge} label="Speed" value={`${Math.round(me.speed)} km/h`} />
+                  <Tile icon={Gauge} label="Speed" value={`${Math.round(meLive.speed)} km/h`} />
                   <Tile icon={MapPin} label="Next Stop" value={me.nextStop} small />
                   <Tile icon={Users} label="Onboard" value={`${me.seatsTotal - me.seatsAvailable}/${me.seatsTotal}`} />
-                  <Tile icon={Wifi} label="GPS" value={online ? "Streaming" : "Cached"} ok={online} />
+                  <Tile icon={Satellite} label="Phone GPS" value={!shift ? "Idle" : gpsErr ? "Error" : !gps ? "Locating…" : online ? `Live ±${Math.round(gps.acc)}m` : `Cached ${queued}`} ok={shift && !!gps && online} />
                 </div>
 
                 {/* Occupancy reporter */}
@@ -167,7 +249,15 @@ function DriverPage() {
           {/* Map showing me + telemetry */}
           <div className="space-y-4">
             <div className="surface border border-border rounded-2xl overflow-hidden h-[460px]">
-              <ClientMap buses={[me]} selectedRoute={activeRoute} />
+              <ClientMap buses={[meLive]} selectedRoute={activeRoute} />
+            </div>
+            <div className="surface border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-eco mb-2"><Smartphone className="size-3.5" />Real-time phone GPS</div>
+              {gpsErr ? <p className="text-sm text-destructive">{gpsErr}</p> : shift ? (
+                <p className="text-sm">{gps ? <>Streaming <b>{me.id}</b> on <b>{activeRoute}</b> · {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)} · <b>{sent}</b> pings sent{queued ? ` · ${queued} queued offline` : ""}. Open the Live map on another device to watch it move.</> : "Waiting for a GPS fix — allow location access when your browser asks."}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Open this page on the driver's phone, pick the bus and route, then tap <b>Start Shift</b>. The phone's real location is sent every 5 seconds and appears instantly on the Live and Authority maps with a LIVE badge.{shareUrl && <> Phone link: <span className="font-mono text-primary">{shareUrl}</span></>}</p>
+              )}
             </div>
             <div className="grid md:grid-cols-3 gap-3">
               <Stat label="Trips today" value="6" />

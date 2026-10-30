@@ -9,64 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as RewardsRouteImport } from './routes/rewards'
-import { Route as LiveRouteImport } from './routes/live'
-import { Route as ImpactRouteImport } from './routes/impact'
-import { Route as DriverRouteImport } from './routes/driver'
-import { Route as DepotRouteImport } from './routes/depot'
-import { Route as DemoRouteImport } from './routes/demo'
-import { Route as ChannelsRouteImport } from './routes/channels'
-import { Route as AuthorityRouteImport } from './routes/authority'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiPublicSmsRouteImport } from './routes/api/public/sms'
-import { Route as ApiPublicIvrAudioRouteImport } from './routes/api/public/ivr-audio'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AuthorityRouteImport } from './routes/authority'
+import { Route as ChannelsRouteImport } from './routes/channels'
+import { Route as DemoRouteImport } from './routes/demo'
+import { Route as DepotRouteImport } from './routes/depot'
+import { Route as DriverRouteImport } from './routes/driver'
+import { Route as ImpactRouteImport } from './routes/impact'
+import { Route as LiveRouteImport } from './routes/live'
+import { Route as RewardsRouteImport } from './routes/rewards'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ApiPublicIvrRouteImport } from './routes/api/public/ivr'
+import { Route as ApiPublicIvrAudioRouteImport } from './routes/api/public/ivr-audio'
+import { Route as ApiPublicSmsRouteImport } from './routes/api/public/sms'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RewardsRoute = RewardsRouteImport.update({
-  id: '/rewards',
-  path: '/rewards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LiveRoute = LiveRouteImport.update({
-  id: '/live',
-  path: '/live',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImpactRoute = ImpactRouteImport.update({
-  id: '/impact',
-  path: '/impact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DriverRoute = DriverRouteImport.update({
-  id: '/driver',
-  path: '/driver',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DepotRoute = DepotRouteImport.update({
-  id: '/depot',
-  path: '/depot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoRoute = DemoRouteImport.update({
-  id: '/demo',
-  path: '/demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChannelsRoute = ChannelsRouteImport.update({
-  id: '/channels',
-  path: '/channels',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthorityRoute = AuthorityRouteImport.update({
-  id: '/authority',
-  path: '/authority',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -74,14 +34,54 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthorityRoute = AuthorityRouteImport.update({
+  id: '/authority',
+  path: '/authority',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicSmsRoute = ApiPublicSmsRouteImport.update({
-  id: '/api/public/sms',
-  path: '/api/public/sms',
+const ChannelsRoute = ChannelsRouteImport.update({
+  id: '/channels',
+  path: '/channels',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DepotRoute = DepotRouteImport.update({
+  id: '/depot',
+  path: '/depot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DriverRoute = DriverRouteImport.update({
+  id: '/driver',
+  path: '/driver',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpactRoute = ImpactRouteImport.update({
+  id: '/impact',
+  path: '/impact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveRoute = LiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RewardsRoute = RewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicIvrRoute = ApiPublicIvrRouteImport.update({
+  id: '/api/public/ivr',
+  path: '/api/public/ivr',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicIvrAudioRoute = ApiPublicIvrAudioRouteImport.update({
@@ -89,9 +89,9 @@ const ApiPublicIvrAudioRoute = ApiPublicIvrAudioRouteImport.update({
   path: '/api/public/ivr-audio',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicIvrRoute = ApiPublicIvrRouteImport.update({
-  id: '/api/public/ivr',
-  path: '/api/public/ivr',
+const ApiPublicSmsRoute = ApiPublicSmsRouteImport.update({
+  id: '/api/public/sms',
+  path: '/api/public/sms',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -214,67 +214,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rewards': {
-      id: '/rewards'
-      path: '/rewards'
-      fullPath: '/rewards'
-      preLoaderRoute: typeof RewardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/live': {
-      id: '/live'
-      path: '/live'
-      fullPath: '/live'
-      preLoaderRoute: typeof LiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/impact': {
-      id: '/impact'
-      path: '/impact'
-      fullPath: '/impact'
-      preLoaderRoute: typeof ImpactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/driver': {
-      id: '/driver'
-      path: '/driver'
-      fullPath: '/driver'
-      preLoaderRoute: typeof DriverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/depot': {
-      id: '/depot'
-      path: '/depot'
-      fullPath: '/depot'
-      preLoaderRoute: typeof DepotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo': {
-      id: '/demo'
-      path: '/demo'
-      fullPath: '/demo'
-      preLoaderRoute: typeof DemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/channels': {
-      id: '/channels'
-      path: '/channels'
-      fullPath: '/channels'
-      preLoaderRoute: typeof ChannelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/authority': {
-      id: '/authority'
-      path: '/authority'
-      fullPath: '/authority'
-      preLoaderRoute: typeof AuthorityRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -284,18 +228,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/authority': {
+      id: '/authority'
+      path: '/authority'
+      fullPath: '/authority'
+      preLoaderRoute: typeof AuthorityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/sms': {
-      id: '/api/public/sms'
-      path: '/api/public/sms'
-      fullPath: '/api/public/sms'
-      preLoaderRoute: typeof ApiPublicSmsRouteImport
+    '/channels': {
+      id: '/channels'
+      path: '/channels'
+      fullPath: '/channels'
+      preLoaderRoute: typeof ChannelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/depot': {
+      id: '/depot'
+      path: '/depot'
+      fullPath: '/depot'
+      preLoaderRoute: typeof DepotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/driver': {
+      id: '/driver'
+      path: '/driver'
+      fullPath: '/driver'
+      preLoaderRoute: typeof DriverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impact': {
+      id: '/impact'
+      path: '/impact'
+      fullPath: '/impact'
+      preLoaderRoute: typeof ImpactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live': {
+      id: '/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof LiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rewards': {
+      id: '/rewards'
+      path: '/rewards'
+      fullPath: '/rewards'
+      preLoaderRoute: typeof RewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ivr': {
+      id: '/api/public/ivr'
+      path: '/api/public/ivr'
+      fullPath: '/api/public/ivr'
+      preLoaderRoute: typeof ApiPublicIvrRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ivr-audio': {
@@ -305,11 +305,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIvrAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/ivr': {
-      id: '/api/public/ivr'
-      path: '/api/public/ivr'
-      fullPath: '/api/public/ivr'
-      preLoaderRoute: typeof ApiPublicIvrRouteImport
+    '/api/public/sms': {
+      id: '/api/public/sms'
+      path: '/api/public/sms'
+      fullPath: '/api/public/sms'
+      preLoaderRoute: typeof ApiPublicSmsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -334,3 +334,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

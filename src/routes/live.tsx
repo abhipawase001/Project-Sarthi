@@ -60,7 +60,7 @@ function LivePage() {
                     <div className="flex items-center gap-2">
                       <div className="size-8 rounded-lg bg-primary/15 grid place-items-center text-primary"><BusIcon className="size-4" /></div>
                       <div>
-                        <div className="font-mono text-xs">{b.id}</div>
+                        <div className="font-mono text-xs flex items-center gap-1.5">{b.id}{(b as { live?: boolean }).live && <span className="rounded bg-eco/20 px-1.5 py-0.5 text-[9px] font-bold text-eco animate-pulse">● LIVE GPS</span>}</div>
                         <div className="text-[11px] text-muted-foreground">{b.routeName}</div>
                       </div>
                     </div>
