@@ -213,10 +213,10 @@ function DriverPage() {
 
                 {/* Live status */}
                 <div className="mx-5 mt-4 grid grid-cols-2 gap-2">
-                  <Tile icon={Gauge} label="Speed" value={`${Math.round(me.speed)} km/h`} />
+                  <Tile icon={Gauge} label="Speed" value={`${Math.round(meLive.speed)} km/h`} />
                   <Tile icon={MapPin} label="Next Stop" value={me.nextStop} small />
                   <Tile icon={Users} label="Onboard" value={`${me.seatsTotal - me.seatsAvailable}/${me.seatsTotal}`} />
-                  <Tile icon={Wifi} label="GPS" value={online ? "Streaming" : "Cached"} ok={online} />
+                  <Tile icon={Satellite} label="Phone GPS" value={!shift ? "Idle" : gpsErr ? "Error" : !gps ? "Locating…" : online ? `Live ±${Math.round(gps.acc)}m` : `Cached ${queued}`} ok={shift && !!gps && online} />
                 </div>
 
                 {/* Occupancy reporter */}
@@ -249,7 +249,15 @@ function DriverPage() {
           {/* Map showing me + telemetry */}
           <div className="space-y-4">
             <div className="surface border border-border rounded-2xl overflow-hidden h-[460px]">
-              <ClientMap buses={[me]} selectedRoute={activeRoute} />
+              <ClientMap buses={[meLive]} selectedRoute={activeRoute} />
+            </div>
+            <div className="surface border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-eco mb-2"><Smartphone className="size-3.5" />Real-time phone GPS</div>
+              {gpsErr ? <p className="text-sm text-destructive">{gpsErr}</p> : shift ? (
+                <p className="text-sm">{gps ? <>Streaming <b>{me.id}</b> on <b>{activeRoute}</b> · {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)} · <b>{sent}</b> pings sent{queued ? ` · ${queued} queued offline` : ""}. Open the Live map on another device to watch it move.</> : "Waiting for a GPS fix — allow location access when your browser asks."}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Open this page on the driver's phone, pick the bus and route, then tap <b>Start Shift</b>. The phone's real location is sent every 5 seconds and appears instantly on the Live and Authority maps with a LIVE badge.{shareUrl && <> Phone link: <span className="font-mono text-primary">{shareUrl}</span></>}</p>
+              )}
             </div>
             <div className="grid md:grid-cols-3 gap-3">
               <Stat label="Trips today" value="6" />
