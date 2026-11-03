@@ -53,6 +53,28 @@ function Landing() {
     <div className="min-h-screen">
       <Nav />
 
+      {/* ROLE GATEWAY */}
+      <section className="mx-auto max-w-7xl px-6 pt-10">
+        <div className="text-xs font-mono uppercase tracking-widest text-primary mb-3">Choose your app</div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { to: "/live", icon: Smartphone, title: "Passenger", desc: "Live bus map, arrival times, SMS & call help, rewards, SOS." },
+            { to: "/driver", icon: Bus, title: "Driver", desc: "Pick bus & route, start shift, share live GPS." },
+            { to: "/depot", icon: Users, title: "Depot Manager", desc: "Rosters, fuel, maintenance and AI command bar." },
+            { to: "/authority", icon: Shield, title: "City Authority", desc: "Fleet overview, AI alerts and SOS response." },
+          ].map((r) => (
+            <Link key={r.to} to={r.to} className="group surface border border-border rounded-2xl p-5 hover:border-primary transition-colors">
+              <r.icon className="size-6 text-primary" />
+              <div className="mt-3 font-display font-semibold text-lg">{r.title}</div>
+              <p className="mt-1 text-sm text-muted-foreground">{r.desc}</p>
+              <div className="mt-4 inline-flex items-center gap-1 text-sm text-primary font-medium">
+                Launch app <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 grid-bg opacity-30" />
