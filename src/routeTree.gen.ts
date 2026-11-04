@@ -18,6 +18,7 @@ import { Route as DepotRouteImport } from './routes/depot'
 import { Route as DriverRouteImport } from './routes/driver'
 import { Route as ImpactRouteImport } from './routes/impact'
 import { Route as LiveRouteImport } from './routes/live'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ApiPublicIvrRouteImport } from './routes/api/public/ivr'
@@ -69,6 +70,11 @@ const LiveRoute = LiveRouteImport.update({
   path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/driver': typeof DriverRoute
   '/impact': typeof ImpactRoute
   '/live': typeof LiveRoute
+  '/portal': typeof PortalRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/ivr': typeof ApiPublicIvrRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/driver': typeof DriverRoute
   '/impact': typeof ImpactRoute
   '/live': typeof LiveRoute
+  '/portal': typeof PortalRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/ivr': typeof ApiPublicIvrRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/driver': typeof DriverRoute
   '/impact': typeof ImpactRoute
   '/live': typeof LiveRoute
+  '/portal': typeof PortalRoute
   '/rewards': typeof RewardsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/ivr': typeof ApiPublicIvrRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/impact'
     | '/live'
+    | '/portal'
     | '/rewards'
     | '/sitemap.xml'
     | '/api/public/ivr'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/impact'
     | '/live'
+    | '/portal'
     | '/rewards'
     | '/sitemap.xml'
     | '/api/public/ivr'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/impact'
     | '/live'
+    | '/portal'
     | '/rewards'
     | '/sitemap.xml'
     | '/api/public/ivr'
@@ -205,6 +217,7 @@ export interface RootRouteChildren {
   DriverRoute: typeof DriverRoute
   ImpactRoute: typeof ImpactRoute
   LiveRoute: typeof LiveRoute
+  PortalRoute: typeof PortalRoute
   RewardsRoute: typeof RewardsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicIvrRoute: typeof ApiPublicIvrRoute
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rewards': {
       id: '/rewards'
       path: '/rewards'
@@ -325,6 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   DriverRoute: DriverRoute,
   ImpactRoute: ImpactRoute,
   LiveRoute: LiveRoute,
+  PortalRoute: PortalRoute,
   RewardsRoute: RewardsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicIvrRoute: ApiPublicIvrRoute,
