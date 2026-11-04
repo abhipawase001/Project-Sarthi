@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Users, X, Smartphone, Bus, Building2, Shield } from "lucide-react";
+import { Users, X, Smartphone, Bus, Building2 } from "lucide-react";
 
 export const PERSONAS = [
   { to: "/live", label: "Passenger", icon: Smartphone },
   { to: "/driver", label: "Driver", icon: Bus },
-  { to: "/depot", label: "Depot", icon: Building2 },
-  { to: "/authority", label: "Authority", icon: Shield },
+  { to: "/portal", label: "Portal", icon: Building2 },
 ] as const;
 
 export function PersonaSwitcher() {

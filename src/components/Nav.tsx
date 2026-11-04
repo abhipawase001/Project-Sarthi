@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Bus, Radio, LogOut } from "lucide-react";
 
-type Portal = "home" | "passenger" | "driver" | "depot" | "authority";
+type Portal = "home" | "passenger" | "driver" | "portal";
 
 const PORTALS: Record<Portal, { name: string; tag: string; links: { to: string; label: string }[] }> = {
   home: {
@@ -24,12 +24,11 @@ const PORTALS: Record<Portal, { name: string; tag: string; links: { to: string; 
     ],
   },
   driver: { name: "DRISHTI", tag: "Driver Cockpit", links: [{ to: "/driver", label: "Cockpit" }] },
-  depot: { name: "DRISHTI", tag: "Depot Portal", links: [{ to: "/depot", label: "Operations" }] },
-  authority: {
+  portal: {
     name: "DRISHTI",
-    tag: "Authority Command",
+    tag: "Operations Portal",
     links: [
-      { to: "/authority", label: "Command Center" },
+      { to: "/portal", label: "Operations" },
       { to: "/impact", label: "Impact" },
     ],
   },
@@ -38,8 +37,7 @@ const PORTALS: Record<Portal, { name: string; tag: string; links: { to: string; 
 function portalFor(path: string): Portal {
   if (path.startsWith("/live") || path.startsWith("/channels") || path.startsWith("/rewards")) return "passenger";
   if (path.startsWith("/driver")) return "driver";
-  if (path.startsWith("/depot")) return "depot";
-  if (path.startsWith("/authority")) return "authority";
+  if (path.startsWith("/portal") || path.startsWith("/depot") || path.startsWith("/authority")) return "portal";
   return "home";
 }
 

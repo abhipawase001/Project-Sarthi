@@ -58,10 +58,9 @@ function Landing() {
         <div className="text-xs font-mono uppercase tracking-widest text-primary mb-3">Choose your app</div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { to: "/live", icon: Smartphone, title: "Passenger", desc: "Live bus map, arrival times, SMS & call help, rewards, SOS." },
-            { to: "/driver", icon: Bus, title: "Driver", desc: "Pick bus & route, start shift, share live GPS." },
-            { to: "/depot", icon: Users, title: "Depot Manager", desc: "Rosters, fuel, maintenance and AI command bar." },
-            { to: "/authority", icon: Shield, title: "City Authority", desc: "Fleet overview, AI alerts and SOS response." },
+            { to: "/live", icon: Smartphone, title: "My Sarthi · Passenger", desc: "Live bus map, arrival times, SMS & call help, rewards, SOS." },
+            { to: "/driver", icon: Bus, title: "Sarthi · Driver", desc: "Pick bus & route, start shift, share live GPS." },
+            { to: "/portal", icon: Shield, title: "Sarthi Portal · Depot & Authority", desc: "Rosters, fuel, AI command bar, fleet overview and alerts." },
           ].map((r) => (
             <Link key={r.to} to={r.to} className="group surface border border-border rounded-2xl p-5 hover:border-primary transition-colors">
               <r.icon className="size-6 text-primary" />
@@ -97,7 +96,7 @@ function Landing() {
                 <Radio className="size-4" /> Open Live Map
                 <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/authority" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl surface border border-border font-semibold hover:bg-surface-2 transition-colors">
+              <Link to="/portal" search={{ tab: "command" }} className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl surface border border-border font-semibold hover:bg-surface-2 transition-colors">
                 <Activity className="size-4" /> Authority Dashboard
               </Link>
               <Link to="/channels" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl surface border border-border font-semibold hover:bg-surface-2 transition-colors">
