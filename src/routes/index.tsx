@@ -96,7 +96,7 @@ function Landing() {
                 <Radio className="size-4" /> Open Live Map
                 <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/portal" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl surface border border-border font-semibold hover:bg-surface-2 transition-colors">
+              <Link to="/portal" search={{ tab: "command" }} className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl surface border border-border font-semibold hover:bg-surface-2 transition-colors">
                 <Activity className="size-4" /> Authority Dashboard
               </Link>
               <Link to="/channels" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl surface border border-border font-semibold hover:bg-surface-2 transition-colors">
