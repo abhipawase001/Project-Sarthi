@@ -9,9 +9,9 @@ export const Route = createFileRoute("/portal")({
   }),
   head: () => ({
     meta: [
-      { title: "Operations Portal — Drishti" },
+      { title: "Operations Portal — Sarthi" },
       { name: "description", content: "One portal for depot operations and the city authority command center: rosters, fleet, fuel, AI alerts, live KPIs and ridership analytics." },
-      { property: "og:title", content: "Operations Portal — Drishti" },
+      { property: "og:title", content: "Operations Portal — Sarthi" },
       { property: "og:description", content: "Depot ops + authority command center in one console." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

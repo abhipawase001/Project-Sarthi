@@ -16,7 +16,7 @@ const ROUTE_IDS = Object.keys(ROUTES) as Array<keyof typeof ROUTES>;
 export function SmsEtaConsole() {
   const send = useServerFn(smsReply);
   const [msgs, setMsgs] = useState<Msg[]>([
-    { from: "bot", text: "DRISHTI ETA\nText ETA for bus times.\nH = Hindi, MR = Marathi" },
+    { from: "bot", text: "SARTHI ETA\nText ETA for bus times.\nH = Hindi, MR = Marathi" },
   ]);
   const [session, setSession] = useState<SmsSession>({ lang: "en" });
   const [input, setInput] = useState("");

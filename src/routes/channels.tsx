@@ -9,9 +9,9 @@ import { IvrConsole } from "@/components/IvrConsole";
 export const Route = createFileRoute("/channels")({
   head: () => ({
     meta: [
-      { title: "SMS Bus ETA · WhatsApp · IVR — Drishti" },
+      { title: "SMS Bus ETA · WhatsApp · IVR — Sarthi" },
       { name: "description", content: "Get live bus ETAs over plain SMS: pick a route and stop, get the next 3 buses. Plus WhatsApp bot and IVR for feature-phone users." },
-      { property: "og:title", content: "SMS Bus ETA — Drishti" },
+      { property: "og:title", content: "SMS Bus ETA — Sarthi" },
       { property: "og:description", content: "Route + stop over SMS returns the next 3 buses with arrival time and seats. No smartphone, no data needed." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -51,13 +51,13 @@ function ChannelsPage() {
       <div className="mx-auto max-w-7xl px-6 py-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">SMS Bus ETA · WhatsApp · IVR</h1>
-          <p className="text-sm text-muted-foreground max-w-2xl">40% of tier-2 commuters don't have smartphones. Drishti reaches them on whatever phone they own — pick a route and stop below and get the exact SMS a feature phone receives.</p>
+          <p className="text-sm text-muted-foreground max-w-2xl">40% of tier-2 commuters don't have smartphones. Sarthi reaches them on whatever phone they own — pick a route and stop below and get the exact SMS a feature phone receives.</p>
         </div>
 
         <SmsEtaConsole />
 
         <div className="grid lg:grid-cols-2 gap-4">
-          <ChatBox title="WhatsApp Bot · +91 90000 56161" subtitle="Rich replies with map links" icon={Smartphone} placeholder="Hi Drishti" />
+          <ChatBox title="WhatsApp Bot · +91 90000 56161" subtitle="Rich replies with map links" icon={Smartphone} placeholder="Hi Sarthi" />
           <IvrConsole />
         </div>
 

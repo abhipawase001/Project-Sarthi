@@ -1,5 +1,5 @@
 /**
- * Drishti SMS engine — pure, stateless conversation logic.
+ * Sarthi SMS engine — pure, stateless conversation logic.
  *
  * Takes an inbound SMS body + the sender's short-lived session and returns
  * the reply text (<=160 chars per part) plus the next session state.
@@ -84,11 +84,11 @@ export function etasForStop(routeId: string, stopId: string, buses: Bus[] = INIT
 
 const T = {
   en: {
-    menu: (rs: string) => `DRISHTI ETA\nReply route no:\n${rs}`,
+    menu: (rs: string) => `SARTHI ETA\nReply route no:\n${rs}`,
     stops: (r: string, ss: string) => `${r} stops - reply no:\n${ss}`,
     footer: "Reply A=alert, M=menu",
     noBus: (s: string) => `No live bus towards ${s} right now. Reply M for menu.`,
-    help: "DRISHTI SMS\nETA = bus times\nM = menu\nA = alert me\nH = Hindi, MR = Marathi\nSOS = emergency",
+    help: "SARTHI SMS\nETA = bus times\nM = menu\nA = alert me\nH = Hindi, MR = Marathi\nSOS = emergency",
     badRoute: (rs: string) => `Route not found. Reply route no:\n${rs}`,
     badStop: (ss: string) => `Stop not found. Reply no:\n${ss}`,
     alertOk: (b: string, s: string) => `Alert set. We will SMS you when ${b} is 5 min from ${s}.`,
@@ -98,11 +98,11 @@ const T = {
     full: "FULL",
   },
   hi: {
-    menu: (rs: string) => `DRISHTI ETA\nRoute no bhejein:\n${rs}`,
+    menu: (rs: string) => `SARTHI ETA\nRoute no bhejein:\n${rs}`,
     stops: (r: string, ss: string) => `${r} stop - no bhejein:\n${ss}`,
     footer: "A=alert, M=menu",
     noBus: (s: string) => `${s} ke liye abhi koi bus nahi. M bhejein.`,
-    help: "DRISHTI SMS\nETA = bus samay\nM = menu\nA = alert\nE = English, MR = Marathi\nSOS = madad",
+    help: "SARTHI SMS\nETA = bus samay\nM = menu\nA = alert\nE = English, MR = Marathi\nSOS = madad",
     badRoute: (rs: string) => `Route nahi mila. Route no bhejein:\n${rs}`,
     badStop: (ss: string) => `Stop nahi mila. No bhejein:\n${ss}`,
     alertOk: (b: string, s: string) => `Alert set. ${b} jab ${s} se 5 min door hogi, SMS aayega.`,
@@ -112,11 +112,11 @@ const T = {
     full: "BHARI",
   },
   mr: {
-    menu: (rs: string) => `DRISHTI ETA\nRoute kramank pathva:\n${rs}`,
+    menu: (rs: string) => `SARTHI ETA\nRoute kramank pathva:\n${rs}`,
     stops: (r: string, ss: string) => `${r} thambe - kramank pathva:\n${ss}`,
     footer: "A=alert, M=menu",
     noBus: (s: string) => `${s} sathi sadhya bus nahi. M pathva.`,
-    help: "DRISHTI SMS\nETA = bus vel\nM = menu\nA = alert\nE = English, H = Hindi\nSOS = madat",
+    help: "SARTHI SMS\nETA = bus vel\nM = menu\nA = alert\nE = English, H = Hindi\nSOS = madat",
     badRoute: (rs: string) => `Route sapadla nahi. Kramank pathva:\n${rs}`,
     badStop: (ss: string) => `Thamba sapadla nahi. Kramank pathva:\n${ss}`,
     alertOk: (b: string, s: string) => `Alert set. ${b} ${s} pasun 5 min var astana SMS yeil.`,

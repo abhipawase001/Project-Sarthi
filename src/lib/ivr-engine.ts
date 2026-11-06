@@ -1,5 +1,5 @@
 /**
- * Drishti IVR engine — pure, stateless DTMF state machine.
+ * Sarthi IVR engine — pure, stateless DTMF state machine.
  *
  * The phone line, the on-screen keypad console and the provider webhook all
  * run this same function, so the demo is literally the production flow.
@@ -43,7 +43,7 @@ export const initialCall: IvrCallState = { state: "lang", lang: "en", attempts: 
 const T = {
   en: {
     welcome:
-      "Namaste. Welcome to Drishti bus information. For Hindi press 1. For Marathi press 2. For English press 3.",
+      "Namaste. Welcome to Sarthi bus information. For Hindi press 1. For Marathi press 2. For English press 3.",
     routePrompt: "Press the number for your route.",
     routeItem: (i: number, name: string) => `For ${name}, press ${i}.`,
     stopPrompt: "Press the number for your stop.",
@@ -54,13 +54,13 @@ const T = {
     noBus: (stop: string) => `Sorry, no live bus towards ${stop} right now.`,
     resultFooter: "Press 1 to hear this again. Press 9 for an arrival alert. Press 0 for the main menu.",
     alertOk: (bus: string, stop: string) =>
-      `Alert set. We will call and message you when bus ${spellBus(bus)} is five minutes from ${stop}. Thank you for using Drishti.`,
+      `Alert set. We will call and message you when bus ${spellBus(bus)} is five minutes from ${stop}. Thank you for using Sarthi.`,
     invalid: "Sorry, I did not get that.",
-    bye: "Thank you for calling Drishti. Goodbye.",
+    bye: "Thank you for calling Sarthi. Goodbye.",
   },
   hi: {
     welcome:
-      "Namaste. Drishti bus jaankari mein aapka swagat hai. Hindi ke liye ek dabaiye. Marathi ke liye do. English ke liye teen.",
+      "Namaste. Sarthi bus jaankari mein aapka swagat hai. Hindi ke liye ek dabaiye. Marathi ke liye do. English ke liye teen.",
     routePrompt: "Apne route ka number dabaiye.",
     routeItem: (i: number, name: string) => `${name} ke liye ${hiNum(i)} dabaiye.`,
     stopPrompt: "Apne stop ka number dabaiye.",
@@ -71,13 +71,13 @@ const T = {
     noBus: (stop: string) => `Maaf kijiye, ${stop} ke liye abhi koi bus nahi hai.`,
     resultFooter: "Dobara sunne ke liye ek dabaiye. Alert ke liye nau dabaiye. Mukhya menu ke liye shunya.",
     alertOk: (bus: string, stop: string) =>
-      `Alert lag gaya. Jab bus ${spellBus(bus)} ${stop} se paanch minute door hogi, hum aapko call aur message karenge. Drishti ka dhanyavaad.`,
+      `Alert lag gaya. Jab bus ${spellBus(bus)} ${stop} se paanch minute door hogi, hum aapko call aur message karenge. Sarthi ka dhanyavaad.`,
     invalid: "Maaf kijiye, samajh nahi aaya.",
-    bye: "Drishti ko call karne ke liye dhanyavaad. Namaste.",
+    bye: "Sarthi ko call karne ke liye dhanyavaad. Namaste.",
   },
   mr: {
     welcome:
-      "Namaskar. Drishti bus mahiti madhe aaple swagat aahe. Hindi sathi ek dabava. Marathi sathi don. English sathi teen.",
+      "Namaskar. Sarthi bus mahiti madhe aaple swagat aahe. Hindi sathi ek dabava. Marathi sathi don. English sathi teen.",
     routePrompt: "Aaplya route cha kramank dabava.",
     routeItem: (i: number, name: string) => `${name} sathi ${mrNum(i)} dabava.`,
     stopPrompt: "Aaplya thambyacha kramank dabava.",
@@ -88,9 +88,9 @@ const T = {
     noBus: (stop: string) => `Kshama kara, ${stop} sathi sadhya bus nahi.`,
     resultFooter: "Punha aikanyasathi ek dabava. Alert sathi nau dabava. Mukhya menu sathi shunya.",
     alertOk: (bus: string, stop: string) =>
-      `Alert lavla. Bus ${spellBus(bus)} ${stop} pasun paach minit lamb astana aamhi call ani message karu. Drishti chi aabhari aahot.`,
+      `Alert lavla. Bus ${spellBus(bus)} ${stop} pasun paach minit lamb astana aamhi call ani message karu. Sarthi chi aabhari aahot.`,
     invalid: "Kshama kara, samajle nahi.",
-    bye: "Drishti la call kelyabaddal dhanyavaad. Namaskar.",
+    bye: "Sarthi la call kelyabaddal dhanyavaad. Namaskar.",
   },
 } as const;
 
