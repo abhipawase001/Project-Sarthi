@@ -5,7 +5,7 @@ type Portal = "home" | "passenger" | "driver" | "portal";
 
 const PORTALS: Record<Portal, { name: string; tag: string; links: { to: string; label: string }[] }> = {
   home: {
-    name: "DRISHTI",
+    name: "SARTHI",
     tag: "Smart Transit",
     links: [
       { to: "/", label: "Overview" },
@@ -15,7 +15,7 @@ const PORTALS: Record<Portal, { name: string; tag: string; links: { to: string; 
     ],
   },
   passenger: {
-    name: "DRISHTI",
+    name: "SARTHI",
     tag: "Passenger App",
     links: [
       { to: "/live", label: "Live Map" },
@@ -23,9 +23,9 @@ const PORTALS: Record<Portal, { name: string; tag: string; links: { to: string; 
       { to: "/rewards", label: "Rewards" },
     ],
   },
-  driver: { name: "DRISHTI", tag: "Driver Cockpit", links: [{ to: "/driver", label: "Cockpit" }] },
+  driver: { name: "SARTHI", tag: "Driver Cockpit", links: [{ to: "/driver", label: "Cockpit" }] },
   portal: {
-    name: "DRISHTI",
+    name: "SARTHI",
     tag: "Operations Portal",
     links: [
       { to: "/portal", label: "Operations" },

@@ -10,10 +10,10 @@ import { Play, Pause, AlertTriangle, Battery, Wifi, MapPin, Users, Gauge, Power,
 export const Route = createFileRoute("/driver")({
   head: () => ({
     meta: [
-      { title: "Driver App — Drishti Live GPS" },
-      { name: "description", content: "Turn any phone into a live bus GPS tracker: start a shift and stream real location to the Drishti map." },
-      { property: "og:title", content: "Driver App — Drishti Live GPS" },
-      { property: "og:description", content: "Turn any phone into a live bus GPS tracker for Drishti." },
+      { title: "Driver App — Sarthi Live GPS" },
+      { name: "description", content: "Turn any phone into a live bus GPS tracker: start a shift and stream real location to the Sarthi map." },
+      { property: "og:title", content: "Driver App — Sarthi Live GPS" },
+      { property: "og:description", content: "Turn any phone into a live bus GPS tracker for Sarthi." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

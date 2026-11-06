@@ -41,47 +41,42 @@
 
 :root {
   --radius: 0.75rem;
-  /* Deep navy → cyan → eco green palette */
-  --background: oklch(0.16 0.04 250);
-  --foreground: oklch(0.97 0.01 240);
-  --surface: oklch(0.21 0.045 252);
-  --surface-2: oklch(0.26 0.05 254);
-  --card: oklch(0.21 0.045 252);
-  --card-foreground: oklch(0.97 0.01 240);
-  --primary: oklch(0.78 0.18 200);          /* electric cyan */
-  --primary-foreground: oklch(0.16 0.04 250);
-  --secondary: oklch(0.3 0.05 255);
-  --secondary-foreground: oklch(0.97 0.01 240);
-  --muted: oklch(0.28 0.04 255);
-  --muted-foreground: oklch(0.72 0.03 250);
+  /* Charcoal and sage palette */
+  --background: oklch(0.2219 0.0063 179.03);
+  --foreground: oklch(0.9354 0.0067 160.07);
+  --surface: oklch(0.2784 0.0092 173.58);
+  --surface-2: oklch(0.33 0.01 170);
+  --card: oklch(0.2784 0.0092 173.58);
+  --card-foreground: oklch(0.9354 0.0067 160.07);
+  --primary: oklch(0.7085 0.1040 159.53);
+  --primary-foreground: oklch(0.2219 0.0063 179.03);
+  --secondary: oklch(0.34 0.012 170);
+  --secondary-foreground: oklch(0.9354 0.0067 160.07);
+  --muted: oklch(0.34 0.012 170);
+  --muted-foreground: oklch(0.72 0.012 165);
   --accent: oklch(0.72 0.2 50);             /* warm amber */
-  --accent-foreground: oklch(0.16 0.04 250);
-  --eco: oklch(0.82 0.22 145);              /* electric eco green */
-  --eco-foreground: oklch(0.16 0.04 250);
+  --accent-foreground: oklch(0.2219 0.0063 179.03);
+  --eco: oklch(0.78 0.16 150);
+  --eco-foreground: oklch(0.2219 0.0063 179.03);
   --warn: oklch(0.78 0.18 70);
   --destructive: oklch(0.65 0.24 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.32 0.04 255 / 60%);
-  --input: oklch(0.28 0.04 255);
-  --ring: oklch(0.78 0.18 200);
+  --border: oklch(0.43 0.012 170 / 65%);
+  --input: oklch(0.34 0.012 170);
+  --ring: oklch(0.7085 0.1040 159.53);
 
-  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.35 0.15 200 / 0.5), transparent),
-                    linear-gradient(180deg, oklch(0.18 0.04 250), oklch(0.13 0.03 248));
-  --gradient-primary: linear-gradient(135deg, oklch(0.78 0.18 200), oklch(0.82 0.22 145));
-  --gradient-eco: linear-gradient(135deg, oklch(0.82 0.22 145), oklch(0.7 0.18 175));
-  --shadow-glow: 0 0 40px oklch(0.78 0.18 200 / 0.35);
-  --shadow-eco: 0 0 40px oklch(0.82 0.22 145 / 0.4);
-  --shadow-card: 0 10px 40px -10px oklch(0.05 0.02 250 / 0.6);
+  --gradient-hero: linear-gradient(180deg, oklch(0.2784 0.0092 173.58), oklch(0.2219 0.0063 179.03));
+  --gradient-primary: linear-gradient(135deg, oklch(0.7085 0.1040 159.53), oklch(0.78 0.16 150));
+  --gradient-eco: linear-gradient(135deg, oklch(0.78 0.16 150), oklch(0.66 0.11 165));
+  --shadow-glow: 0 0 32px oklch(0.7085 0.1040 159.53 / 0.24);
+  --shadow-eco: 0 0 32px oklch(0.78 0.16 150 / 0.28);
+  --shadow-card: 0 10px 40px -10px oklch(0.12 0.008 175 / 0.65);
 }
 
 @layer base {
   * { border-color: var(--color-border); }
   html, body { background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
-  body { background-image:
-    radial-gradient(circle at 15% 20%, oklch(0.78 0.18 200 / 0.08), transparent 40%),
-    radial-gradient(circle at 85% 80%, oklch(0.82 0.22 145 / 0.07), transparent 40%);
-    background-attachment: fixed;
-  }
+  body { background-attachment: fixed; }
   h1,h2,h3,h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 }
 
@@ -115,8 +110,8 @@
 }
 
 /* Leaflet dark theme override */
-.leaflet-container { background: oklch(0.18 0.04 250); border-radius: var(--radius-xl); }
+.leaflet-container { background: oklch(0.2219 0.0063 179.03); border-radius: var(--radius-xl); }
 .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92); }
-.leaflet-control-attribution { background: oklch(0.21 0.045 252 / 0.8) !important; color: oklch(0.72 0.03 250) !important; }
-.leaflet-control-attribution a { color: oklch(0.78 0.18 200) !important; }
+.leaflet-control-attribution { background: oklch(0.2784 0.0092 173.58 / 0.9) !important; color: oklch(0.72 0.012 165) !important; }
+.leaflet-control-attribution a { color: oklch(0.7085 0.1040 159.53) !important; }
 .leaflet-control-zoom a { background: var(--surface) !important; color: var(--foreground) !important; border-color: var(--border) !important; }
