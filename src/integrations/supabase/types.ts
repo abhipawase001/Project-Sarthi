@@ -55,39 +55,76 @@ export type Database = {
       }
       bus_pings: {
         Row: {
+          accuracy_m: number | null
           bus_id: string
+          client_ping_id: string | null
           created_at: string
+          driver_id: string | null
           heading: number
           id: string
           lat: number
           lng: number
+          observed_at: string
           occupancy: string
+          roster_id: string | null
           route: string
           speed: number
         }
         Insert: {
+          accuracy_m?: number | null
           bus_id: string
+          client_ping_id?: string | null
           created_at?: string
+          driver_id?: string | null
           heading?: number
           id?: string
           lat: number
           lng: number
+          observed_at?: string
           occupancy?: string
+          roster_id?: string | null
           route: string
           speed?: number
         }
         Update: {
+          accuracy_m?: number | null
           bus_id?: string
+          client_ping_id?: string | null
           created_at?: string
+          driver_id?: string | null
           heading?: number
           id?: string
           lat?: number
           lng?: number
+          observed_at?: string
           occupancy?: string
+          roster_id?: string | null
           route?: string
           speed?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bus_pings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bus_pings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "public_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bus_pings_roster_id_fkey"
+            columns: ["roster_id"]
+            isOneToOne: false
+            referencedRelation: "roster"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       buses: {
         Row: {
@@ -130,7 +167,9 @@ export type Database = {
       }
       drivers: {
         Row: {
+          auth_user_id: string | null
           created_at: string
+          email: string | null
           id: string
           license_expiry: string | null
           license_no: string | null
@@ -141,7 +180,9 @@ export type Database = {
           status: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           license_expiry?: string | null
           license_no?: string | null
@@ -152,7 +193,9 @@ export type Database = {
           status?: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           license_expiry?: string | null
           license_no?: string | null
@@ -301,6 +344,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      live_bus_positions: {
+        Row: {
+          accuracy_m: number | null
+          bus_id: string
+          heading: number
+          lat: number
+          lng: number
+          observed_at: string
+          occupancy: string
+          received_at: string
+          route: string
+          speed: number
+        }
+        Insert: {
+          accuracy_m?: number | null
+          bus_id: string
+          heading: number
+          lat: number
+          lng: number
+          observed_at: string
+          occupancy: string
+          received_at?: string
+          route: string
+          speed: number
+        }
+        Update: {
+          accuracy_m?: number | null
+          bus_id?: string
+          heading?: number
+          lat?: number
+          lng?: number
+          observed_at?: string
+          occupancy?: string
+          received_at?: string
+          route?: string
+          speed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_bus_positions_bus_id_fkey"
+            columns: ["bus_id"]
+            isOneToOne: true
+            referencedRelation: "buses"
+            referencedColumns: ["reg_no"]
+          },
+        ]
       }
       roster: {
         Row: {
@@ -491,6 +581,7 @@ export type Database = {
           fuel_liters: number | null
           id: string
           passengers_est: number | null
+          roster_id: string | null
           route: string | null
           started_at: string
         }
@@ -502,6 +593,7 @@ export type Database = {
           fuel_liters?: number | null
           id?: string
           passengers_est?: number | null
+          roster_id?: string | null
           route?: string | null
           started_at?: string
         }
@@ -513,10 +605,19 @@ export type Database = {
           fuel_liters?: number | null
           id?: string
           passengers_est?: number | null
+          roster_id?: string | null
           route?: string | null
           started_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trip_logs_roster_id_fkey"
+            columns: ["roster_id"]
+            isOneToOne: false
+            referencedRelation: "roster"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
