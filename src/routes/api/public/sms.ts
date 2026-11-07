@@ -7,7 +7,7 @@ import { parseSms, emptySession, type SmsSession } from "@/lib/sms-engine";
  * Inbound SMS webhook.
  *
  * Providers (Twilio / GatewayAPI) POST the incoming text here; we run the
- * shared Drishti SMS engine and return the reply. Session state (which route
+ * shared Sarthi SMS engine and return the reply. Session state (which route
  * the sender picked) is persisted server-side against a salted hash of the
  * phone number — the raw number is never stored or logged.
  *

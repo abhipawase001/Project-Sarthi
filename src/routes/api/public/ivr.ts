@@ -4,7 +4,7 @@ import { z } from "zod";
 import { initialCall, ivrStep, type IvrCallState, type IvrLang } from "@/lib/ivr-engine";
 
 /**
- * Toll-free voice line webhook (Exotel / Twilio compatible).
+ * Sarthi toll-free voice line webhook (Exotel / Twilio compatible).
  *
  * The provider calls this URL on every step of the call with the caller id and
  * the digit that was pressed. We run the shared IVR engine, persist the call
