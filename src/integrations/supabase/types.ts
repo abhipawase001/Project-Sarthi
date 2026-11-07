@@ -668,7 +668,9 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      driver_end_shift: { Args: { _roster_id: string }; Returns: number }
+      driver_start_shift: { Args: { _roster_id: string }; Returns: string }
+      link_driver_account: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "dispatcher" | "viewer"
