@@ -7,7 +7,7 @@
  * Input:  current call state + the digit the caller pressed.
  * Output: what to say, what state comes next, and whether to keep listening.
  */
-import { INITIAL_BUSES, ROUTES, STOPS, type Bus } from "./mockData";
+import { ROUTES, STOPS, type Bus } from "./mockData";
 import { etasForStop, stopsForRoute, ROUTE_IDS, type SmsLang } from "./sms-engine";
 
 export type IvrLang = SmsLang;
@@ -149,7 +149,7 @@ const LANG_BY_DIGIT: Record<string, IvrLang> = { "1": "hi", "2": "mr", "3": "en"
 export function ivrStep(
   call: IvrCallState = initialCall,
   digit: string | null = null,
-  buses: Bus[] = INITIAL_BUSES,
+  buses: Bus[] = [],
 ): IvrStep {
   const lang = call.lang ?? "en";
   const t = T[lang];

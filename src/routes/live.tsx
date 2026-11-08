@@ -27,7 +27,7 @@ function LivePage() {
         <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold">Live Tracking</h1>
-            <p className="text-sm text-muted-foreground">Sangamner pilot · {buses.length} buses streaming</p>
+            <p className="text-sm text-muted-foreground">{buses.length} registered buses with a fresh driver GPS signal</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setRoute(null)} className={`px-3 py-1.5 rounded-lg text-sm border ${!route ? "bg-primary text-primary-foreground border-primary" : "surface border-border"}`}>All routes</button>
@@ -69,14 +69,14 @@ function LivePage() {
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                    <Pill icon={Clock}      label="ETA"   value={`${b.etaMin}m`} />
-                    <Pill icon={Users}      label="Seats" value={`${b.seatsAvailable}/${b.seatsTotal}`} />
+                    <Pill icon={Clock}      label="ETA"   value={b.etaMin > 0 ? `${b.etaMin}m` : "—"} />
+                    <Pill icon={Users}      label="Occupancy" value={b.occupancy} />
                     <Pill icon={Navigation} label="km/h"  value={Math.round(b.speed)} />
                   </div>
                   <div className="mt-2 text-[11px] text-muted-foreground">Next: <span className="text-foreground">{b.nextStop}</span></div>
                 </div>
               ))}
-              {visible.length === 0 && <div className="text-sm text-muted-foreground text-center py-12">No buses match</div>}
+              {visible.length === 0 && <div className="text-sm text-muted-foreground text-center py-12">No buses have a fresh GPS location right now.</div>}
             </div>
 
             <SosButton />

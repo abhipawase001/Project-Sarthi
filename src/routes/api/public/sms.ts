@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { parseSms, emptySession, type SmsSession } from "@/lib/sms-engine";
+import { getFreshLiveFleet } from "@/lib/live-fleet.server";
 
 /**
  * Inbound SMS webhook.
@@ -77,7 +78,7 @@ export const Route = createFileRoute("/api/public/sms")({
           return new Response("Bad request", { status: 400 });
         }
 
-        const salt = secret ?? "drishti-demo-salt";
+        const salt = secret ?? "sarthi-sms-dry-run";
         const phoneHash = hashPhone(payload.from, salt);
 
         let session: SmsSession = emptySession;
@@ -104,7 +105,13 @@ export const Route = createFileRoute("/api/public/sms")({
           }
         }
 
-        const result = parseSms(payload.body, session);
+        let buses;
+        try {
+          buses = await getFreshLiveFleet();
+        } catch {
+          return Response.json({ error: "Live bus data is temporarily unavailable" }, { status: 503 });
+        }
+        const result = parseSms(payload.body, session, buses);
 
         if (admin) {
           const next = result.session;
@@ -147,7 +154,7 @@ export const Route = createFileRoute("/api/public/sms")({
       },
       GET: async () =>
         Response.json({
-          service: "drishti-sms",
+          service: "sarthi-sms",
           status: process.env["SMS_WEBHOOK_SECRET"] ? "live" : "dry-run",
           usage: "POST { from, body } or provider form-encoded payload",
         }),

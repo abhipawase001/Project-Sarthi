@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHash, timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { initialCall, ivrStep, type IvrCallState, type IvrLang } from "@/lib/ivr-engine";
+import { getFreshLiveFleet } from "@/lib/live-fleet.server";
 
 /**
  * Sarthi toll-free voice line webhook (Exotel / Twilio compatible).
@@ -102,7 +103,7 @@ export const Route = createFileRoute("/api/public/ivr")({
           return new Response("Bad request", { status: 400 });
         }
 
-        const salt = secret ?? "drishti-ivr-demo-salt";
+        const salt = secret ?? "sarthi-ivr-dry-run";
         const callHash = hash(payload.callSid, salt);
         const phoneHash = payload.from ? hash(payload.from, salt) : null;
 
@@ -132,7 +133,13 @@ export const Route = createFileRoute("/api/public/ivr")({
           }
         }
 
-        const step = ivrStep(call, payload.digits || null);
+        let buses;
+        try {
+          buses = await getFreshLiveFleet();
+        } catch {
+          return Response.json({ error: "Live bus data is temporarily unavailable" }, { status: 503 });
+        }
+        const step = ivrStep(call, payload.digits || null, buses);
 
         if (admin) {
           try {
@@ -199,7 +206,7 @@ export const Route = createFileRoute("/api/public/ivr")({
       },
       GET: async () =>
         Response.json({
-          service: "drishti-ivr",
+          service: "sarthi-ivr",
           status: process.env["IVR_WEBHOOK_SECRET"] ? "live" : "dry-run",
           usage: "POST { callSid, from, digits } — add ?format=twiml or ?format=exotel for provider XML",
         }),

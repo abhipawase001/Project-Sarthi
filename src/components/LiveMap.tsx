@@ -59,9 +59,9 @@ export function LiveMap({ buses, selectedRoute }: { buses: Bus[]; selectedRoute?
               <div className="mt-2 text-xs grid grid-cols-2 gap-1">
                 <span>Driver:</span><span>{b.driver}</span>
                 <span>Speed:</span><span>{Math.round(b.speed)} km/h</span>
-                <span>Seats:</span><span>{b.seatsAvailable}/{b.seatsTotal}</span>
+                <span>Occupancy:</span><span className="capitalize">{b.occupancy} (driver report)</span>
                 <span>Next:</span><span>{b.nextStop}</span>
-                <span>ETA:</span><span>{b.etaMin} min</span>
+                <span>ETA:</span><span>{b.etaMin > 0 ? `${b.etaMin} min` : "Unavailable"}</span>
               </div>
             </div>
           </Popup>

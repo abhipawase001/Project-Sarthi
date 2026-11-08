@@ -1,77 +1,65 @@
-import { useEffect, useRef, useState } from "react";
-import { INITIAL_BUSES, ROUTES, stepBus, type Bus, type Occupancy } from "@/lib/mockData";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  buildLiveFleet,
+  type LiveFleetBus,
+  type LivePosition,
+  type RegisteredBus,
+} from "@/lib/live-fleet";
 
-export type LiveBus = Bus & { live?: boolean; lastPingAt?: number };
-
-type Ping = { bus_id: string; route: string; lat: number; lng: number; speed: number; heading: number; occupancy: string; created_at: string };
-
-const FRESH_MS = 60_000;
-
-/** Simulated fleet, overridden by real driver-phone GPS pings (bus_pings) when fresh. */
-export function useLiveBuses(intervalMs = 1500) {
-  const [sim, setSim] = useState<Bus[]>(INITIAL_BUSES);
-  const [pings, setPings] = useState<Record<string, Ping>>({});
-  const [now, setNow] = useState(0);
-  const mounted = useRef(true);
+/** Only registered, active buses with a GPS sample newer than 60 seconds. */
+export function useLiveBuses(_intervalMs = 10_000) {
+  const [buses, setBuses] = useState<LiveFleetBus[]>([]);
+  const [now, setNow] = useState(Date.now());
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setSim((prev) => prev.map(stepBus));
+    let active = true;
+    const refresh = async () => {
+      const [registryResult, positionResult] = await Promise.all([
+        supabase.from("buses").select("reg_no,route,capacity,status").eq("status", "active"),
+        supabase.from("live_bus_positions")
+          .select("bus_id,route,lat,lng,speed,heading,occupancy,observed_at,accuracy_m")
+          .gte("observed_at", new Date(Date.now() - 60_000).toISOString()),
+      ]);
+      if (!active) return;
       setNow(Date.now());
-    }, intervalMs);
-    return () => clearInterval(t);
-  }, [intervalMs]);
+      if (registryResult.error || positionResult.error) {
+        setBuses([]);
+        return;
+      }
+      setBuses(buildLiveFleet(
+        (registryResult.data ?? []) as RegisteredBus[],
+        (positionResult.data ?? []) as LivePosition[],
+        Date.now(),
+      ));
+    };
+    void refresh();
 
-  useEffect(() => {
-    mounted.current = true;
-    const since = new Date(Date.now() - FRESH_MS).toISOString();
-    supabase
-      .from("bus_pings")
-      .select("bus_id,route,lat,lng,speed,heading,occupancy,created_at")
-      .gte("created_at", since)
-      .order("created_at", { ascending: true })
-      .limit(500)
-      .then(({ data }) => {
-        if (!mounted.current || !data) return;
-        setPings((p) => {
-          const n = { ...p };
-          for (const r of data as Ping[]) n[r.bus_id] = r;
-          return n;
-        });
-      });
-    const ch = supabase
-      .channel(`bus-pings-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bus_pings" }, (payload) => {
-        const r = payload.new as Ping;
-        setPings((p) => ({ ...p, [r.bus_id]: r }));
+    const channel = supabase
+      .channel(`live-bus-positions-${crypto.randomUUID()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_bus_positions" }, () => {
+        void refresh();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "buses" }, () => {
+        void refresh();
       })
       .subscribe();
-    return () => {
-      mounted.current = false;
-      supabase.removeChannel(ch);
-    };
-  }, []);
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      setRefreshKey((key) => key + 1);
+    }, 10_000);
 
-  const t = now || 0;
-  const buses: LiveBus[] = sim.map((b) => {
-    const p = pings[b.id];
-    if (!p || !t) return b;
-    const at = new Date(p.created_at).getTime();
-    if (t - at > FRESH_MS) return b;
-    const route = p.route in ROUTES ? p.route : b.route;
-    return {
-      ...b,
-      route,
-      routeName: ROUTES[route as keyof typeof ROUTES]?.name ?? b.routeName,
-      lat: p.lat,
-      lng: p.lng,
-      speed: p.speed,
-      heading: p.heading,
-      occupancy: p.occupancy as Occupancy,
-      live: true,
-      lastPingAt: at,
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      void supabase.removeChannel(channel);
     };
-  });
+  }, [refreshKey]);
+
+  useEffect(() => {
+    setBuses((current) => current.filter((bus) => now - bus.lastPingAt <= 60_000));
+  }, [now]);
+
   return buses;
 }

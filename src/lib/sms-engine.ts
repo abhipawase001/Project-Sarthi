@@ -6,7 +6,8 @@
  * The very same engine powers the on-screen simulator and the real
  * provider webhook, so what judges see is what a phone receives.
  */
-import { INITIAL_BUSES, ROUTES, STOPS, type Bus } from "./mockData";
+import { ROUTES, STOPS, type Bus } from "./mockData";
+import { estimateLiveEtaMinutes } from "./live-fleet";
 
 export type SmsLang = "en" | "hi" | "mr";
 
@@ -62,18 +63,14 @@ export function stopsForRoute(routeId: string) {
  * ETAs for the next buses on `routeId` heading to `stopId`.
  * Distance along the road network is approximated as crow-flies x1.35.
  */
-export function etasForStop(routeId: string, stopId: string, buses: Bus[] = INITIAL_BUSES): SmsEta[] {
-  const stop = STOPS.find((s) => s.id === stopId);
-  if (!stop) return [];
+export function etasForStop(routeId: string, stopId: string, buses: Bus[] = []): SmsEta[] {
   return buses
     .filter((b) => b.route === routeId)
     .map((b) => {
-      const km = haversineKm(b.lat, b.lng, stop.lat, stop.lng) * 1.35;
-      const speed = Math.max(12, b.speed || 18); // km/h, idling buses still get moving
-      const dwell = 0.6 * Math.max(0, stopsForRoute(routeId).length - 1);
-      const etaMin = Math.max(1, Math.round((km / speed) * 60 + dwell));
-      return { busId: b.id, etaMin, seats: b.seatsAvailable, status: b.status };
+      const etaMin = estimateLiveEtaMinutes(b.lat, b.lng, b.speed, stopId);
+      return etaMin === null ? null : { busId: b.id, etaMin, seats: b.seatsAvailable, status: b.status };
     })
+    .filter((eta): eta is SmsEta => eta !== null)
     .sort((a, b) => a.etaMin - b.etaMin)
     .slice(0, 3);
 }
@@ -206,7 +203,7 @@ function formatEtas(routeId: string, stopId: string, lang: SmsLang, buses: Bus[]
 export function parseSms(
   body: string,
   prev: SmsSession = emptySession,
-  buses: Bus[] = INITIAL_BUSES,
+  buses: Bus[] = [],
 ): SmsResult {
   const raw = (body ?? "").trim();
   const lang = detectLang(raw, prev.lang ?? "en");

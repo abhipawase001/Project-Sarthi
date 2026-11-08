@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { parseSms, emptySession, type SmsSession } from "./sms-engine";
+import { getFreshLiveFleet } from "./live-fleet.server";
 
 const sessionSchema = z.object({
   route: z.string().max(16).nullish(),
@@ -22,7 +23,8 @@ export const smsReply = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }) => {
     const session = (data.session ?? emptySession) as SmsSession;
-    const result = parseSms(data.body, session);
+    const buses = await getFreshLiveFleet();
+    const result = parseSms(data.body, session, buses);
     return {
       reply: result.reply,
       session: result.session,
