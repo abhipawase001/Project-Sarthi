@@ -11,7 +11,6 @@ import {
 export function useLiveBuses(_intervalMs = 10_000) {
   const [buses, setBuses] = useState<LiveFleetBus[]>([]);
   const [now, setNow] = useState(Date.now());
-  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -45,17 +44,16 @@ export function useLiveBuses(_intervalMs = 10_000) {
         void refresh();
       })
       .subscribe();
-    const timer = window.setInterval(() => {
-      setNow(Date.now());
-      setRefreshKey((key) => key + 1);
-    }, 10_000);
+    const refreshTimer = window.setInterval(() => { void refresh(); }, 10_000);
+    const clockTimer = window.setInterval(() => setNow(Date.now()), 5_000);
 
     return () => {
       active = false;
-      window.clearInterval(timer);
+      window.clearInterval(refreshTimer);
+      window.clearInterval(clockTimer);
       void supabase.removeChannel(channel);
     };
-  }, [refreshKey]);
+  }, []);
 
   useEffect(() => {
     setBuses((current) => current.filter((bus) => now - bus.lastPingAt <= 60_000));

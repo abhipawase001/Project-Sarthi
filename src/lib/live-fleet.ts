@@ -48,9 +48,10 @@ export function estimateLiveEtaMinutes(
   lng: number,
   speedKmh: number,
   stopId: string,
+  routeId?: string,
 ) {
   const stop = STOPS.find((candidate) => candidate.id === stopId);
-  if (!stop || speedKmh <= 0) return null;
+  if (!stop || (routeId && !stop.routes.includes(routeId)) || speedKmh <= 0) return null;
   const estimate = Math.round((distanceKm(lat, lng, stop.lat, stop.lng) * 1.35 / speedKmh) * 60);
   return Math.max(1, estimate);
 }
@@ -70,7 +71,7 @@ function nextStopEstimate(position: LivePosition) {
     return currentDistance < closestDistance ? index : closest;
   }, 0);
   const next = routeStops[(closestIndex + 1) % routeStops.length];
-  const etaMin = estimateLiveEtaMinutes(position.lat, position.lng, position.speed, next.id);
+  const etaMin = estimateLiveEtaMinutes(position.lat, position.lng, position.speed, next.id, position.route);
   return { nextStop: next.name, etaMin: etaMin ?? -1 };
 }
 
