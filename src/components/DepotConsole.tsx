@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRoster, depotCommand } from "@/lib/depot-ai.functions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sparkles, Loader2, Send, Bus as BusIcon, Users, ClipboardList,
   Fuel, Wrench, Download, RefreshCw, AlertCircle, CheckCircle2,
@@ -11,15 +14,32 @@ import {
 type Tab = "roster" | "fleet" | "crew" | "trips" | "fuel";
 
 interface Bus { reg_no: string; route: string | null; status: string; fuel_type: string; odometer_km: number; health_score: number; next_service_km: number | null; last_service_at: string | null; capacity: number; }
-interface Driver { id: string; name: string; role: string; license_no: string | null; license_expiry: string | null; rating: number; status: string; phone: string | null; }
+interface Driver { id: string; name: string; role: string; license_no: string | null; license_expiry: string | null; rating: number; status: string; phone: string | null; email: string | null; }
 interface Roster { id: string; duty_date: string; bus_reg: string | null; driver_id: string | null; conductor_id: string | null; route: string | null; shift_start: string; shift_end: string; status: string; }
+interface Trip { id: string; bus_reg: string | null; route: string | null; started_at: string; ended_at: string | null; distance_km: number | null; driver_id: string | null; }
+interface FuelLog { id: string; bus_reg: string; liters: number; cost: number | null; odometer_km: number | null; refueled_at: string; }
+interface ServiceLog { id: string; bus_reg: string; kind: string; notes: string | null; serviced_at: string; next_due_km: number | null; }
+
+function todayInIndia() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+}
 
 export function DepotConsole() {
   const [tab, setTab] = useState<Tab>("roster");
   const [buses, setBuses] = useState<Bus[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [roster, setRoster] = useState<Roster[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
+  const [serviceLogs, setServiceLogs] = useState<ServiceLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [crewForm, setCrewForm] = useState({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
+  const [busForm, setBusForm] = useState({ reg_no: "", route: "R1", capacity: "42", fuel_type: "diesel" });
+  const [rosterForm, setRosterForm] = useState({ bus_reg: "", driver_id: "", route: "R1", shift_start: "06:00", shift_end: "14:00" });
+  const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<string>("");
   const [cmd, setCmd] = useState("");
@@ -29,14 +49,24 @@ export function DepotConsole() {
   const runCmd = useServerFn(depotCommand);
 
   async function refresh() {
-    const [b, d, r] = await Promise.all([
+    setLoadError("");
+    const today = todayInIndia();
+    const [b, d, r, t, f, s] = await Promise.all([
       supabase.from("buses").select("*").order("reg_no"),
       supabase.from("drivers").select("*").order("name"),
-      supabase.from("roster").select("*").eq("duty_date", new Date().toISOString().slice(0, 10)).order("shift_start"),
+      supabase.from("roster").select("*").eq("duty_date", today).order("shift_start"),
+      supabase.from("trip_logs").select("id,bus_reg,route,started_at,ended_at,distance_km,driver_id").order("started_at", { ascending: false }).limit(100),
+      supabase.from("fuel_logs").select("id,bus_reg,liters,cost,odometer_km,refueled_at").order("refueled_at", { ascending: false }).limit(100),
+      supabase.from("service_logs").select("id,bus_reg,kind,notes,serviced_at,next_due_km").order("serviced_at", { ascending: false }).limit(100),
     ]);
-    if (b.data) setBuses(b.data as any);
-    if (d.data) setDrivers(d.data as any);
-    if (r.data) setRoster(r.data as any);
+    const failed = [b.error, d.error, r.error, t.error, f.error, s.error].filter(Boolean);
+    if (failed.length) setLoadError(failed[0]?.message ?? "Some operations data could not be loaded.");
+    if (b.data) setBuses(b.data as Bus[]);
+    if (d.data) setDrivers(d.data as Driver[]);
+    if (r.data) setRoster(r.data as Roster[]);
+    if (t.data) setTrips(t.data as Trip[]);
+    if (f.data) setFuelLogs(f.data as FuelLog[]);
+    if (s.data) setServiceLogs(s.data as ServiceLog[]);
     setLoading(false);
   }
   useEffect(() => { refresh(); }, []);
@@ -49,7 +79,7 @@ export function DepotConsole() {
     try {
       const res = await genRoster({
         data: {
-          date: new Date().toISOString().slice(0, 10),
+          date: todayInIndia(),
           buses: buses.map((b) => ({ reg_no: b.reg_no, route: b.route, status: b.status })),
           drivers: drivers.map((d) => ({ id: d.id, name: d.name, role: d.role, status: d.status, rating: Number(d.rating) })),
           notes: "Morning peak 6-10, evening peak 17-20",
@@ -57,11 +87,17 @@ export function DepotConsole() {
       });
       const rows = (res as any).roster ?? [];
       if (rows.length) {
-        const today = new Date().toISOString().slice(0, 10);
-        await supabase.from("roster").delete().eq("duty_date", today);
-        await supabase.from("roster").insert(rows.map((r: any) => ({ ...r, duty_date: today, status: "scheduled" })));
+        const today = todayInIndia();
+        const existing = new Set(roster.map((r) => `${r.bus_reg}:${r.driver_id}:${r.shift_start}`));
+        const additions = rows.filter((r: any) => !existing.has(`${r.bus_reg}:${r.driver_id}:${r.shift_start}`));
+        if (!additions.length) {
+          setAiNote("No new assignments to add; existing roster entries were preserved.");
+          return;
+        }
+        const { error } = await supabase.from("roster").insert(additions.map((r: any) => ({ ...r, duty_date: today, status: "scheduled" })));
+        if (error) throw error;
         setAiNote((res as any).reasoning ?? "Roster regenerated.");
-        refresh();
+        await refresh();
       } else {
         setAiNote("AI did not return any assignments.");
       }
@@ -81,29 +117,87 @@ export function DepotConsole() {
       let ok = true;
       // Execute a few common actions
       if (res.action === "set_bus_status" && res.args?.bus_reg) {
-        await supabase.from("buses").update({ status: res.args.status }).eq("reg_no", res.args.bus_reg);
-        refresh();
+        const { error } = await supabase.from("buses").update({ status: res.args.status }).eq("reg_no", res.args.bus_reg);
+        if (error) throw error;
+        await refresh();
       } else if (res.action === "log_fuel" && res.args?.bus_reg) {
-        await supabase.from("fuel_logs").insert({ bus_reg: res.args.bus_reg, liters: res.args.liters ?? 0, cost: res.args.cost });
+        const { error } = await supabase.from("fuel_logs").insert({ bus_reg: res.args.bus_reg, liters: res.args.liters ?? 0, cost: res.args.cost });
+        if (error) throw error;
+        await refresh();
       } else if (res.action === "schedule_service" && res.args?.bus_reg) {
-        await supabase.from("service_logs").insert({ bus_reg: res.args.bus_reg, kind: res.args.kind ?? "general", notes: "Scheduled via AI command" });
+        const { error } = await supabase.from("service_logs").insert({ bus_reg: res.args.bus_reg, kind: res.args.kind ?? "general", notes: "Scheduled via AI command" });
+        if (error) throw error;
+        await refresh();
       } else if (res.action === "assign_driver" && res.args?.bus_reg && res.args?.driver_name) {
         const drv = drivers.find((d) => d.name.toLowerCase().includes(String(res.args.driver_name).toLowerCase()));
         if (drv) {
-          const today = new Date().toISOString().slice(0, 10);
-          await supabase.from("roster").insert({
+          const today = todayInIndia();
+          const { error } = await supabase.from("roster").insert({
             duty_date: today, bus_reg: res.args.bus_reg, driver_id: drv.id,
             route: buses.find((b) => b.reg_no === res.args.bus_reg)?.route ?? null,
             shift_start: res.args.shift_start ?? "06:00", shift_end: res.args.shift_end ?? "14:00",
             status: "scheduled",
           });
-          refresh();
+          if (error) throw error;
+          await refresh();
         } else ok = false;
+      } else {
+        ok = false;
       }
       setCmdLog((l) => [{ q: text, a: res.speak ?? `Action: ${res.action}`, ok }, ...l].slice(0, 8));
     } catch (e: any) {
       setCmdLog((l) => [{ q: text, a: `⚠️ ${e.message}`, ok: false }, ...l].slice(0, 8));
     }
+  }
+
+  async function saveCrew(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("drivers").insert({
+      name: crewForm.name.trim(), email: crewForm.email.trim().toLowerCase() || null,
+      phone: crewForm.phone.trim() || null, role: crewForm.role,
+      license_no: crewForm.license_no.trim() || null, license_expiry: crewForm.license_expiry || null,
+    });
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setCrewForm({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
+    setSaveMessage("Crew record saved.");
+    await refresh();
+  }
+
+  async function saveBus(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("buses").insert({
+      reg_no: busForm.reg_no.trim().toUpperCase(), route: busForm.route,
+      capacity: Number(busForm.capacity), fuel_type: busForm.fuel_type, status: "active",
+    });
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setBusForm({ reg_no: "", route: "R1", capacity: "42", fuel_type: "diesel" });
+    setSaveMessage("Bus added to the registered fleet.");
+    await refresh();
+  }
+
+  async function saveAssignment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("roster").insert({
+      duty_date: todayInIndia(), bus_reg: rosterForm.bus_reg, driver_id: rosterForm.driver_id,
+      route: rosterForm.route, shift_start: rosterForm.shift_start, shift_end: rosterForm.shift_end, status: "scheduled",
+    });
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setSaveMessage("Driver assignment saved for today.");
+    await refresh();
+  }
+
+  async function changeBusStatus(busReg: string, status: string) {
+    setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("buses").update({ status }).eq("reg_no", busReg);
+    if (error) { setSaveError(error.message); return; }
+    setSaveMessage(`${busReg} updated.`);
+    await refresh();
   }
 
   function exportTrips() {
