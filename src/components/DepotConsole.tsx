@@ -424,49 +424,85 @@ function Table({ headers, children }: { headers: string[]; children: React.React
   );
 }
 
-function FuelTab({ buses, onChange }: { buses: Bus[]; onChange: () => void }) {
-  const [reg, setReg] = useState(buses[0]?.reg_no ?? "");
+function FuelTab({ buses, fuelLogs, serviceLogs, onChange, onError, onSuccess }: { buses: Bus[]; fuelLogs: FuelLog[]; serviceLogs: ServiceLog[]; onChange: () => Promise<void>; onError: (message: string) => void; onSuccess: (message: string) => void }) {
+  const [reg, setReg] = useState("");
   const [liters, setLiters] = useState("");
   const [cost, setCost] = useState("");
+  const [odometer, setOdometer] = useState("");
+  const [serviceKind, setServiceKind] = useState("Oil change");
+  const [serviceNotes, setServiceNotes] = useState("");
+  const [nextDue, setNextDue] = useState("");
   const [busy, setBusy] = useState(false);
   async function save() {
-    if (!reg || !liters) return;
+    onError(""); onSuccess("");
+    if (!reg || !liters || Number(liters) <= 0 || (cost && Number(cost) < 0) || (odometer && Number(odometer) < 0)) {
+      onError("Choose a bus and enter valid fuel, cost, and odometer values.");
+      return;
+    }
     setBusy(true);
-    await supabase.from("fuel_logs").insert({ bus_reg: reg, liters: Number(liters), cost: cost ? Number(cost) : null });
+    const { error } = await supabase.from("fuel_logs").insert({ bus_reg: reg, liters: Number(liters), cost: cost ? Number(cost) : null, odometer_km: odometer ? Number(odometer) : null });
+    if (error) { onError(error.message); setBusy(false); return; }
     setLiters(""); setCost("");
+    setOdometer(""); onSuccess("Fuel entry saved.");
     setBusy(false);
-    onChange();
+    await onChange();
   }
   async function service(kind: string) {
-    if (!reg) return;
-    await supabase.from("service_logs").insert({ bus_reg: reg, kind });
-    await supabase.from("buses").update({ last_service_at: new Date().toISOString() }).eq("reg_no", reg);
-    onChange();
+    onError(""); onSuccess("");
+    if (!reg) { onError("Choose a fleet bus first."); return; }
+    setBusy(true);
+    const { error: serviceError } = await supabase.from("service_logs").insert({ bus_reg: reg, kind, notes: serviceNotes.trim() || null, next_due_km: nextDue ? Number(nextDue) : null });
+    if (serviceError) { onError(serviceError.message); setBusy(false); return; }
+    const updates: { last_service_at: string; next_service_km?: number } = { last_service_at: new Date().toISOString() };
+    if (nextDue) updates.next_service_km = Number(nextDue);
+    const { error: busError } = await supabase.from("buses").update(updates).eq("reg_no", reg);
+    if (busError) onError(`Service record saved, but the bus summary could not be updated: ${busError.message}`);
+    else onSuccess("Service entry saved.");
+    setServiceNotes(""); setNextDue(""); setBusy(false);
+    await onChange();
   }
   return (
+    <div className="space-y-5">
     <div className="grid md:grid-cols-2 gap-4">
       <div className="surface border border-border rounded-2xl p-5">
         <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><Fuel className="size-4 text-primary" /> Log Refuel</h3>
-        <select value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-2 text-sm">
+        <select required value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-2 text-sm">
+          <option value="">Choose a fleet bus</option>
           {buses.map((b) => <option key={b.reg_no} value={b.reg_no}>{b.reg_no} ({b.fuel_type})</option>)}
         </select>
         <div className="grid grid-cols-2 gap-2 mb-2">
-          <input value={liters} onChange={(e) => setLiters(e.target.value)} placeholder="Liters" className="surface-2 border border-border rounded-lg px-3 py-2 text-sm" />
-          <input value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Cost (₹)" className="surface-2 border border-border rounded-lg px-3 py-2 text-sm" />
+          <Input type="number" min="0.1" step="0.1" value={liters} onChange={(e) => setLiters(e.target.value)} placeholder="Liters" />
+          <Input type="number" min="0" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Cost (₹)" />
+          <Input type="number" min="0" step="1" value={odometer} onChange={(e) => setOdometer(e.target.value)} placeholder="Odometer km" />
         </div>
-        <button onClick={save} disabled={busy} className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">Save fuel entry</button>
+        <Button onClick={save} disabled={busy || !reg} className="w-full">{busy ? <Loader2 className="animate-spin" /> : <Fuel />}Save fuel entry</Button>
       </div>
       <div className="surface border border-border rounded-2xl p-5">
         <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><Wrench className="size-4 text-accent" /> Quick Service Log</h3>
-        <select value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-3 text-sm">
+        <select required value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-3 text-sm">
+          <option value="">Choose a fleet bus</option>
           {buses.map((b) => <option key={b.reg_no} value={b.reg_no}>{b.reg_no}</option>)}
         </select>
         <div className="grid grid-cols-2 gap-2">
-          {["Oil change", "Tyre check", "Brake service", "General inspection"].map((k) => (
-            <button key={k} onClick={() => service(k)} className="py-2 rounded-lg surface-2 border border-border text-xs hover:border-accent">{k}</button>
-          ))}
+          <Label className="space-y-1 text-xs">Service type<select value={serviceKind} onChange={(event) => setServiceKind(event.target.value)} className="mt-1 h-9 w-full border border-input bg-background px-2 text-sm"><option>Oil change</option><option>Tyre check</option><option>Brake service</option><option>General inspection</option></select></Label>
+          <Label className="space-y-1 text-xs">Next service at km<Input type="number" min="0" value={nextDue} onChange={(event) => setNextDue(event.target.value)} placeholder="Optional" /></Label>
+        </div>
+        <Input value={serviceNotes} onChange={(event) => setServiceNotes(event.target.value)} placeholder="Service notes" className="mt-2" />
+        <div className="grid grid-cols-2 gap-2">
+          <Button className="col-span-2 mt-2" onClick={() => void service(serviceKind)} disabled={busy || !reg}>{busy ? <Loader2 className="animate-spin" /> : <Wrench />}Save service log</Button>
         </div>
       </div>
+    </div>
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Table headers={["Date", "Bus", "Fuel", "Cost", "Odometer"]}>
+        {fuelLogs.map((entry) => <tr key={entry.id} className="border-b border-border"><td className="p-3 text-xs">{new Date(entry.refueled_at).toLocaleString()}</td><td className="p-3 font-mono text-xs">{entry.bus_reg}</td><td className="p-3">{Number(entry.liters).toFixed(1)} L</td><td className="p-3">{entry.cost == null ? "—" : `₹${Number(entry.cost).toLocaleString()}`}</td><td className="p-3">{entry.odometer_km == null ? "—" : `${entry.odometer_km.toLocaleString()} km`}</td></tr>)}
+        {!fuelLogs.length && <tr><td colSpan={5} className="p-5 text-center text-sm text-muted-foreground">No fuel entries recorded.</td></tr>}
+      </Table>
+      <Table headers={["Date", "Bus", "Service", "Notes", "Next due"]}>
+        {serviceLogs.map((entry) => <tr key={entry.id} className="border-b border-border"><td className="p-3 text-xs">{new Date(entry.serviced_at).toLocaleString()}</td><td className="p-3 font-mono text-xs">{entry.bus_reg}</td><td className="p-3">{entry.kind}</td><td className="p-3 text-xs">{entry.notes ?? "—"}</td><td className="p-3">{entry.next_due_km == null ? "—" : `${entry.next_due_km.toLocaleString()} km`}</td></tr>)}
+        {!serviceLogs.length && <tr><td colSpan={5} className="p-5 text-center text-sm text-muted-foreground">No service entries recorded.</td></tr>}
+      </Table>
+    </div>
     </div>
   );
 }
