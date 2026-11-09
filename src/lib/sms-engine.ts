@@ -67,7 +67,7 @@ export function etasForStop(routeId: string, stopId: string, buses: Bus[] = []):
   return buses
     .filter((b) => b.route === routeId)
     .map((b) => {
-      const etaMin = estimateLiveEtaMinutes(b.lat, b.lng, b.speed, stopId);
+      const etaMin = estimateLiveEtaMinutes(b.lat, b.lng, b.speed, stopId, routeId);
       return etaMin === null ? null : { busId: b.id, etaMin, seats: b.seatsAvailable, status: b.status };
     })
     .filter((eta): eta is SmsEta => eta !== null)

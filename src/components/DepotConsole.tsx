@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRoster, depotCommand } from "@/lib/depot-ai.functions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sparkles, Loader2, Send, Bus as BusIcon, Users, ClipboardList,
   Fuel, Wrench, Download, RefreshCw, AlertCircle, CheckCircle2,
@@ -11,15 +14,32 @@ import {
 type Tab = "roster" | "fleet" | "crew" | "trips" | "fuel";
 
 interface Bus { reg_no: string; route: string | null; status: string; fuel_type: string; odometer_km: number; health_score: number; next_service_km: number | null; last_service_at: string | null; capacity: number; }
-interface Driver { id: string; name: string; role: string; license_no: string | null; license_expiry: string | null; rating: number; status: string; phone: string | null; }
+interface Driver { id: string; name: string; role: string; license_no: string | null; license_expiry: string | null; rating: number; status: string; phone: string | null; email: string | null; }
 interface Roster { id: string; duty_date: string; bus_reg: string | null; driver_id: string | null; conductor_id: string | null; route: string | null; shift_start: string; shift_end: string; status: string; }
+interface Trip { id: string; bus_reg: string | null; route: string | null; started_at: string; ended_at: string | null; distance_km: number | null; driver_id: string | null; }
+interface FuelLog { id: string; bus_reg: string; liters: number; cost: number | null; odometer_km: number | null; refueled_at: string; }
+interface ServiceLog { id: string; bus_reg: string; kind: string; notes: string | null; serviced_at: string; next_due_km: number | null; }
+
+function todayInIndia() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+}
 
 export function DepotConsole() {
   const [tab, setTab] = useState<Tab>("roster");
   const [buses, setBuses] = useState<Bus[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [roster, setRoster] = useState<Roster[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
+  const [serviceLogs, setServiceLogs] = useState<ServiceLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [crewForm, setCrewForm] = useState({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
+  const [busForm, setBusForm] = useState({ reg_no: "", route: "R1", capacity: "42", fuel_type: "diesel" });
+  const [rosterForm, setRosterForm] = useState({ bus_reg: "", driver_id: "", route: "R1", shift_start: "06:00", shift_end: "14:00" });
+  const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<string>("");
   const [cmd, setCmd] = useState("");
@@ -29,14 +49,24 @@ export function DepotConsole() {
   const runCmd = useServerFn(depotCommand);
 
   async function refresh() {
-    const [b, d, r] = await Promise.all([
+    setLoadError("");
+    const today = todayInIndia();
+    const [b, d, r, t, f, s] = await Promise.all([
       supabase.from("buses").select("*").order("reg_no"),
       supabase.from("drivers").select("*").order("name"),
-      supabase.from("roster").select("*").eq("duty_date", new Date().toISOString().slice(0, 10)).order("shift_start"),
+      supabase.from("roster").select("*").eq("duty_date", today).order("shift_start"),
+      supabase.from("trip_logs").select("id,bus_reg,route,started_at,ended_at,distance_km,driver_id").order("started_at", { ascending: false }).limit(100),
+      supabase.from("fuel_logs").select("id,bus_reg,liters,cost,odometer_km,refueled_at").order("refueled_at", { ascending: false }).limit(100),
+      supabase.from("service_logs").select("id,bus_reg,kind,notes,serviced_at,next_due_km").order("serviced_at", { ascending: false }).limit(100),
     ]);
-    if (b.data) setBuses(b.data as any);
-    if (d.data) setDrivers(d.data as any);
-    if (r.data) setRoster(r.data as any);
+    const failed = [b.error, d.error, r.error, t.error, f.error, s.error].filter(Boolean);
+    if (failed.length) setLoadError(failed[0]?.message ?? "Some operations data could not be loaded.");
+    if (b.data) setBuses(b.data as Bus[]);
+    if (d.data) setDrivers(d.data as Driver[]);
+    if (r.data) setRoster(r.data as Roster[]);
+    if (t.data) setTrips(t.data as Trip[]);
+    if (f.data) setFuelLogs(f.data as FuelLog[]);
+    if (s.data) setServiceLogs(s.data as ServiceLog[]);
     setLoading(false);
   }
   useEffect(() => { refresh(); }, []);
@@ -49,7 +79,7 @@ export function DepotConsole() {
     try {
       const res = await genRoster({
         data: {
-          date: new Date().toISOString().slice(0, 10),
+          date: todayInIndia(),
           buses: buses.map((b) => ({ reg_no: b.reg_no, route: b.route, status: b.status })),
           drivers: drivers.map((d) => ({ id: d.id, name: d.name, role: d.role, status: d.status, rating: Number(d.rating) })),
           notes: "Morning peak 6-10, evening peak 17-20",
@@ -57,11 +87,17 @@ export function DepotConsole() {
       });
       const rows = (res as any).roster ?? [];
       if (rows.length) {
-        const today = new Date().toISOString().slice(0, 10);
-        await supabase.from("roster").delete().eq("duty_date", today);
-        await supabase.from("roster").insert(rows.map((r: any) => ({ ...r, duty_date: today, status: "scheduled" })));
+        const today = todayInIndia();
+        const existing = new Set(roster.map((r) => `${r.bus_reg}:${r.driver_id}:${r.shift_start}`));
+        const additions = rows.filter((r: any) => !existing.has(`${r.bus_reg}:${r.driver_id}:${r.shift_start}`));
+        if (!additions.length) {
+          setAiNote("No new assignments to add; existing roster entries were preserved.");
+          return;
+        }
+        const { error } = await supabase.from("roster").insert(additions.map((r: any) => ({ ...r, duty_date: today, status: "scheduled" })));
+        if (error) throw error;
         setAiNote((res as any).reasoning ?? "Roster regenerated.");
-        refresh();
+        await refresh();
       } else {
         setAiNote("AI did not return any assignments.");
       }
@@ -81,29 +117,87 @@ export function DepotConsole() {
       let ok = true;
       // Execute a few common actions
       if (res.action === "set_bus_status" && res.args?.bus_reg) {
-        await supabase.from("buses").update({ status: res.args.status }).eq("reg_no", res.args.bus_reg);
-        refresh();
+        const { error } = await supabase.from("buses").update({ status: res.args.status }).eq("reg_no", res.args.bus_reg);
+        if (error) throw error;
+        await refresh();
       } else if (res.action === "log_fuel" && res.args?.bus_reg) {
-        await supabase.from("fuel_logs").insert({ bus_reg: res.args.bus_reg, liters: res.args.liters ?? 0, cost: res.args.cost });
+        const { error } = await supabase.from("fuel_logs").insert({ bus_reg: res.args.bus_reg, liters: res.args.liters ?? 0, cost: res.args.cost });
+        if (error) throw error;
+        await refresh();
       } else if (res.action === "schedule_service" && res.args?.bus_reg) {
-        await supabase.from("service_logs").insert({ bus_reg: res.args.bus_reg, kind: res.args.kind ?? "general", notes: "Scheduled via AI command" });
+        const { error } = await supabase.from("service_logs").insert({ bus_reg: res.args.bus_reg, kind: res.args.kind ?? "general", notes: "Scheduled via AI command" });
+        if (error) throw error;
+        await refresh();
       } else if (res.action === "assign_driver" && res.args?.bus_reg && res.args?.driver_name) {
         const drv = drivers.find((d) => d.name.toLowerCase().includes(String(res.args.driver_name).toLowerCase()));
         if (drv) {
-          const today = new Date().toISOString().slice(0, 10);
-          await supabase.from("roster").insert({
+          const today = todayInIndia();
+          const { error } = await supabase.from("roster").insert({
             duty_date: today, bus_reg: res.args.bus_reg, driver_id: drv.id,
             route: buses.find((b) => b.reg_no === res.args.bus_reg)?.route ?? null,
             shift_start: res.args.shift_start ?? "06:00", shift_end: res.args.shift_end ?? "14:00",
             status: "scheduled",
           });
-          refresh();
+          if (error) throw error;
+          await refresh();
         } else ok = false;
+      } else {
+        ok = false;
       }
       setCmdLog((l) => [{ q: text, a: res.speak ?? `Action: ${res.action}`, ok }, ...l].slice(0, 8));
     } catch (e: any) {
       setCmdLog((l) => [{ q: text, a: `⚠️ ${e.message}`, ok: false }, ...l].slice(0, 8));
     }
+  }
+
+  async function saveCrew(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("drivers").insert({
+      name: crewForm.name.trim(), email: crewForm.email.trim().toLowerCase() || null,
+      phone: crewForm.phone.trim() || null, role: crewForm.role,
+      license_no: crewForm.license_no.trim() || null, license_expiry: crewForm.license_expiry || null,
+    });
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setCrewForm({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
+    setSaveMessage("Crew record saved.");
+    await refresh();
+  }
+
+  async function saveBus(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("buses").insert({
+      reg_no: busForm.reg_no.trim().toUpperCase(), route: busForm.route,
+      capacity: Number(busForm.capacity), fuel_type: busForm.fuel_type, status: "active",
+    });
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setBusForm({ reg_no: "", route: "R1", capacity: "42", fuel_type: "diesel" });
+    setSaveMessage("Bus added to the registered fleet.");
+    await refresh();
+  }
+
+  async function saveAssignment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("roster").insert({
+      duty_date: todayInIndia(), bus_reg: rosterForm.bus_reg, driver_id: rosterForm.driver_id,
+      route: rosterForm.route, shift_start: rosterForm.shift_start, shift_end: rosterForm.shift_end, status: "scheduled",
+    });
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setSaveMessage("Driver assignment saved for today.");
+    await refresh();
+  }
+
+  async function changeBusStatus(busReg: string, status: string) {
+    setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("buses").update({ status }).eq("reg_no", busReg);
+    if (error) { setSaveError(error.message); return; }
+    setSaveMessage(`${busReg} updated.`);
+    await refresh();
   }
 
   function exportTrips() {
@@ -181,6 +275,9 @@ export function DepotConsole() {
         </div>
 
         {loading && <div className="text-sm text-muted-foreground">Loading depot data…</div>}
+        {loadError && <div className="border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{loadError}</div>}
+        {saveError && <div className="border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{saveError}</div>}
+        {saveMessage && <div className="border border-eco/40 bg-eco/10 p-3 text-sm text-eco" role="status">{saveMessage}</div>}
 
         {tab === "roster" && (
           <div className="space-y-3">
@@ -197,6 +294,14 @@ export function DepotConsole() {
                 <button onClick={refresh} className="px-3 py-2 text-xs rounded-lg surface-2 border border-border"><RefreshCw className="size-3.5" /></button>
               </div>
             </div>
+            <form onSubmit={saveAssignment} className="grid gap-3 border border-border p-4 md:grid-cols-6 md:items-end">
+              <label className="space-y-1 text-xs text-muted-foreground">Bus<select required value={rosterForm.bus_reg} onChange={(event) => setRosterForm({ ...rosterForm, bus_reg: event.target.value, route: buses.find((bus) => bus.reg_no === event.target.value)?.route ?? rosterForm.route })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="">Select bus</option>{buses.filter((bus) => bus.status === "active").map((bus) => <option key={bus.reg_no} value={bus.reg_no}>{bus.reg_no}</option>)}</select></label>
+              <label className="space-y-1 text-xs text-muted-foreground">Driver<select required value={rosterForm.driver_id} onChange={(event) => setRosterForm({ ...rosterForm, driver_id: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="">Select driver</option>{drivers.filter((driver) => driver.role === "driver").map((driver) => <option key={driver.id} value={driver.id}>{driver.name}</option>)}</select></label>
+              <label className="space-y-1 text-xs text-muted-foreground">Route<select value={rosterForm.route} onChange={(event) => setRosterForm({ ...rosterForm, route: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground">{[...new Set(buses.map((bus) => bus.route).filter((route): route is string => Boolean(route)))].map((route) => <option key={route} value={route}>{route}</option>)}</select></label>
+              <label className="space-y-1 text-xs text-muted-foreground">Start<input type="time" required value={rosterForm.shift_start} onChange={(event) => setRosterForm({ ...rosterForm, shift_start: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+              <label className="space-y-1 text-xs text-muted-foreground">End<input type="time" required value={rosterForm.shift_end} onChange={(event) => setRosterForm({ ...rosterForm, shift_end: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+              <Button type="submit" disabled={saving || !buses.length || !drivers.length}><ClipboardList />Assign</Button>
+            </form>
             {aiNote && <div className="text-xs surface-2 border border-primary/30 rounded-lg p-3 text-muted-foreground"><Sparkles className="size-3 inline text-primary mr-1" /> {aiNote}</div>}
             <Table headers={["Bus", "Route", "Driver", "Conductor", "Shift", "Status"]}>
               {roster.map((r) => (
@@ -209,12 +314,20 @@ export function DepotConsole() {
                   <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-eco/15 text-eco">{r.status}</span></td>
                 </tr>
               ))}
-              {!roster.length && <tr><td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">No duties yet. Click <b>AI Auto-Generate</b> above.</td></tr>}
+              {!roster.length && <tr><td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">No assignments for today. Add one above or use AI Auto-Generate.</td></tr>}
             </Table>
           </div>
         )}
 
         {tab === "fleet" && (
+          <div className="space-y-4">
+          <form onSubmit={saveBus} className="grid gap-3 border border-border p-4 md:grid-cols-5 md:items-end">
+            <label className="space-y-1 text-xs text-muted-foreground">Registration<input required value={busForm.reg_no} onChange={(event) => setBusForm({ ...busForm, reg_no: event.target.value })} placeholder="MH17-AB-1234" className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+            <label className="space-y-1 text-xs text-muted-foreground">Route<select value={busForm.route} onChange={(event) => setBusForm({ ...busForm, route: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground">{[...new Set(buses.map((bus) => bus.route).filter((route): route is string => Boolean(route)))].map((route) => <option key={route} value={route}>{route}</option>)}</select></label>
+            <label className="space-y-1 text-xs text-muted-foreground">Capacity<input type="number" min="1" max="100" required value={busForm.capacity} onChange={(event) => setBusForm({ ...busForm, capacity: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+            <label className="space-y-1 text-xs text-muted-foreground">Fuel type<select value={busForm.fuel_type} onChange={(event) => setBusForm({ ...busForm, fuel_type: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="diesel">Diesel</option><option value="cng">CNG</option><option value="electric">Electric</option><option value="hybrid">Hybrid</option></select></label>
+            <Button type="submit" disabled={saving}><BusIcon />Add to fleet</Button>
+          </form>
           <Table headers={["Reg No", "Route", "Fuel", "Odometer", "Health", "Status", "Next Service"]}>
             {buses.map((b) => {
               const due = b.next_service_km != null && b.odometer_km > b.next_service_km - 2000;
@@ -235,7 +348,7 @@ export function DepotConsole() {
                   <td className="p-3">
                     <select
                       value={b.status}
-                      onChange={async (e) => { await supabase.from("buses").update({ status: e.target.value }).eq("reg_no", b.reg_no); refresh(); }}
+                      onChange={async (e) => { await changeBusStatus(b.reg_no, e.target.value); }}
                       className="text-xs surface-2 border border-border rounded px-2 py-1"
                     >
                       <option value="active">active</option>
@@ -248,16 +361,27 @@ export function DepotConsole() {
               );
             })}
           </Table>
+          </div>
         )}
 
         {tab === "crew" && (
+          <div className="space-y-4">
+          <form onSubmit={saveCrew} className="grid gap-3 border border-border p-4 md:grid-cols-3">
+            <label className="space-y-1 text-xs text-muted-foreground">Name<input required value={crewForm.name} onChange={(event) => setCrewForm({ ...crewForm, name: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+            <label className="space-y-1 text-xs text-muted-foreground">Email for driver sign-in<input type="email" value={crewForm.email} onChange={(event) => setCrewForm({ ...crewForm, email: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+            <label className="space-y-1 text-xs text-muted-foreground">Phone<input value={crewForm.phone} onChange={(event) => setCrewForm({ ...crewForm, phone: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+            <label className="space-y-1 text-xs text-muted-foreground">Crew role<select value={crewForm.role} onChange={(event) => setCrewForm({ ...crewForm, role: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="driver">Driver</option><option value="conductor">Conductor</option></select></label>
+            <label className="space-y-1 text-xs text-muted-foreground">License number<input value={crewForm.license_no} onChange={(event) => setCrewForm({ ...crewForm, license_no: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+            <label className="space-y-1 text-xs text-muted-foreground">License expiry<input type="date" value={crewForm.license_expiry} onChange={(event) => setCrewForm({ ...crewForm, license_expiry: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
+            <div className="md:col-span-3"><Button type="submit" disabled={saving}><Users />Add crew record</Button></div>
+          </form>
           <Table headers={["Name", "Role", "License", "Expiry", "Phone", "Rating", "Status"]}>
             {drivers.map((d) => {
               const expSoon = d.license_expiry && new Date(d.license_expiry) < new Date(Date.now() + 1000 * 60 * 60 * 24 * 180);
               return (
                 <tr key={d.id} className="border-b border-border">
                   <td className="p-3 font-medium">{d.name}</td>
-                  <td className="p-3 text-xs uppercase">{d.role}</td>
+                  <td className="p-3 text-xs uppercase">{d.role}{d.email ? <div className="mt-1 text-[10px] normal-case text-muted-foreground">{d.email}</div> : null}</td>
                   <td className="p-3 font-mono text-xs">{d.license_no ?? "—"}</td>
                   <td className={`p-3 text-xs ${expSoon ? "text-warn" : "text-muted-foreground"}`}>{d.license_expiry ?? "—"}</td>
                   <td className="p-3 font-mono text-xs">{d.phone ?? "—"}</td>
@@ -267,16 +391,18 @@ export function DepotConsole() {
               );
             })}
           </Table>
-        )}
-
-        {tab === "trips" && (
-          <div className="surface border border-border rounded-2xl p-6 text-sm text-muted-foreground">
-            Trip logs are auto-recorded from live bus pings (GPS distance + driver shift). Today's {roster.length} active duties will populate here as shifts end. Use <b>Export CSV</b> on the Roster tab for the daily report.
           </div>
         )}
 
+        {tab === "trips" && (
+          <Table headers={["Bus", "Route", "Driver", "Started", "Ended", "GPS distance"]}>
+            {trips.map((trip) => <tr key={trip.id} className="border-b border-border"><td className="p-3 font-mono text-xs">{trip.bus_reg ?? "—"}</td><td className="p-3">{trip.route ?? "—"}</td><td className="p-3">{driverById(trip.driver_id)}</td><td className="p-3 text-xs">{new Date(trip.started_at).toLocaleString()}</td><td className="p-3 text-xs">{trip.ended_at ? new Date(trip.ended_at).toLocaleString() : <span className="text-eco">In progress</span>}</td><td className="p-3 font-mono">{trip.ended_at ? `${Number(trip.distance_km ?? 0).toFixed(2)} km` : "—"}</td></tr>)}
+            {!trips.length && <tr><td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">No trip records yet.</td></tr>}
+          </Table>
+        )}
+
         {tab === "fuel" && (
-          <FuelTab buses={buses} onChange={refresh} />
+          <FuelTab buses={buses} fuelLogs={fuelLogs} serviceLogs={serviceLogs} onChange={refresh} onError={setSaveError} onSuccess={setSaveMessage} />
         )}
       </div>
     </div>
@@ -298,49 +424,85 @@ function Table({ headers, children }: { headers: string[]; children: React.React
   );
 }
 
-function FuelTab({ buses, onChange }: { buses: Bus[]; onChange: () => void }) {
-  const [reg, setReg] = useState(buses[0]?.reg_no ?? "");
+function FuelTab({ buses, fuelLogs, serviceLogs, onChange, onError, onSuccess }: { buses: Bus[]; fuelLogs: FuelLog[]; serviceLogs: ServiceLog[]; onChange: () => Promise<void>; onError: (message: string) => void; onSuccess: (message: string) => void }) {
+  const [reg, setReg] = useState("");
   const [liters, setLiters] = useState("");
   const [cost, setCost] = useState("");
+  const [odometer, setOdometer] = useState("");
+  const [serviceKind, setServiceKind] = useState("Oil change");
+  const [serviceNotes, setServiceNotes] = useState("");
+  const [nextDue, setNextDue] = useState("");
   const [busy, setBusy] = useState(false);
   async function save() {
-    if (!reg || !liters) return;
+    onError(""); onSuccess("");
+    if (!reg || !liters || Number(liters) <= 0 || (cost && Number(cost) < 0) || (odometer && Number(odometer) < 0)) {
+      onError("Choose a bus and enter valid fuel, cost, and odometer values.");
+      return;
+    }
     setBusy(true);
-    await supabase.from("fuel_logs").insert({ bus_reg: reg, liters: Number(liters), cost: cost ? Number(cost) : null });
+    const { error } = await supabase.from("fuel_logs").insert({ bus_reg: reg, liters: Number(liters), cost: cost ? Number(cost) : null, odometer_km: odometer ? Number(odometer) : null });
+    if (error) { onError(error.message); setBusy(false); return; }
     setLiters(""); setCost("");
+    setOdometer(""); onSuccess("Fuel entry saved.");
     setBusy(false);
-    onChange();
+    await onChange();
   }
   async function service(kind: string) {
-    if (!reg) return;
-    await supabase.from("service_logs").insert({ bus_reg: reg, kind });
-    await supabase.from("buses").update({ last_service_at: new Date().toISOString() }).eq("reg_no", reg);
-    onChange();
+    onError(""); onSuccess("");
+    if (!reg) { onError("Choose a fleet bus first."); return; }
+    setBusy(true);
+    const { error: serviceError } = await supabase.from("service_logs").insert({ bus_reg: reg, kind, notes: serviceNotes.trim() || null, next_due_km: nextDue ? Number(nextDue) : null });
+    if (serviceError) { onError(serviceError.message); setBusy(false); return; }
+    const updates: { last_service_at: string; next_service_km?: number } = { last_service_at: new Date().toISOString() };
+    if (nextDue) updates.next_service_km = Number(nextDue);
+    const { error: busError } = await supabase.from("buses").update(updates).eq("reg_no", reg);
+    if (busError) onError(`Service record saved, but the bus summary could not be updated: ${busError.message}`);
+    else onSuccess("Service entry saved.");
+    setServiceNotes(""); setNextDue(""); setBusy(false);
+    await onChange();
   }
   return (
+    <div className="space-y-5">
     <div className="grid md:grid-cols-2 gap-4">
       <div className="surface border border-border rounded-2xl p-5">
         <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><Fuel className="size-4 text-primary" /> Log Refuel</h3>
-        <select value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-2 text-sm">
+        <select required value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-2 text-sm">
+          <option value="">Choose a fleet bus</option>
           {buses.map((b) => <option key={b.reg_no} value={b.reg_no}>{b.reg_no} ({b.fuel_type})</option>)}
         </select>
         <div className="grid grid-cols-2 gap-2 mb-2">
-          <input value={liters} onChange={(e) => setLiters(e.target.value)} placeholder="Liters" className="surface-2 border border-border rounded-lg px-3 py-2 text-sm" />
-          <input value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Cost (₹)" className="surface-2 border border-border rounded-lg px-3 py-2 text-sm" />
+          <Input type="number" min="0.1" step="0.1" value={liters} onChange={(e) => setLiters(e.target.value)} placeholder="Liters" />
+          <Input type="number" min="0" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Cost (₹)" />
+          <Input type="number" min="0" step="1" value={odometer} onChange={(e) => setOdometer(e.target.value)} placeholder="Odometer km" />
         </div>
-        <button onClick={save} disabled={busy} className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">Save fuel entry</button>
+        <Button onClick={save} disabled={busy || !reg} className="w-full">{busy ? <Loader2 className="animate-spin" /> : <Fuel />}Save fuel entry</Button>
       </div>
       <div className="surface border border-border rounded-2xl p-5">
         <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><Wrench className="size-4 text-accent" /> Quick Service Log</h3>
-        <select value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-3 text-sm">
+        <select required value={reg} onChange={(e) => setReg(e.target.value)} className="w-full surface-2 border border-border rounded-lg px-3 py-2 mb-3 text-sm">
+          <option value="">Choose a fleet bus</option>
           {buses.map((b) => <option key={b.reg_no} value={b.reg_no}>{b.reg_no}</option>)}
         </select>
         <div className="grid grid-cols-2 gap-2">
-          {["Oil change", "Tyre check", "Brake service", "General inspection"].map((k) => (
-            <button key={k} onClick={() => service(k)} className="py-2 rounded-lg surface-2 border border-border text-xs hover:border-accent">{k}</button>
-          ))}
+          <Label className="space-y-1 text-xs">Service type<select value={serviceKind} onChange={(event) => setServiceKind(event.target.value)} className="mt-1 h-9 w-full border border-input bg-background px-2 text-sm"><option>Oil change</option><option>Tyre check</option><option>Brake service</option><option>General inspection</option></select></Label>
+          <Label className="space-y-1 text-xs">Next service at km<Input type="number" min="0" value={nextDue} onChange={(event) => setNextDue(event.target.value)} placeholder="Optional" /></Label>
+        </div>
+        <Input value={serviceNotes} onChange={(event) => setServiceNotes(event.target.value)} placeholder="Service notes" className="mt-2" />
+        <div className="grid grid-cols-2 gap-2">
+          <Button className="col-span-2 mt-2" onClick={() => void service(serviceKind)} disabled={busy || !reg}>{busy ? <Loader2 className="animate-spin" /> : <Wrench />}Save service log</Button>
         </div>
       </div>
+    </div>
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Table headers={["Date", "Bus", "Fuel", "Cost", "Odometer"]}>
+        {fuelLogs.map((entry) => <tr key={entry.id} className="border-b border-border"><td className="p-3 text-xs">{new Date(entry.refueled_at).toLocaleString()}</td><td className="p-3 font-mono text-xs">{entry.bus_reg}</td><td className="p-3">{Number(entry.liters).toFixed(1)} L</td><td className="p-3">{entry.cost == null ? "—" : `₹${Number(entry.cost).toLocaleString()}`}</td><td className="p-3">{entry.odometer_km == null ? "—" : `${entry.odometer_km.toLocaleString()} km`}</td></tr>)}
+        {!fuelLogs.length && <tr><td colSpan={5} className="p-5 text-center text-sm text-muted-foreground">No fuel entries recorded.</td></tr>}
+      </Table>
+      <Table headers={["Date", "Bus", "Service", "Notes", "Next due"]}>
+        {serviceLogs.map((entry) => <tr key={entry.id} className="border-b border-border"><td className="p-3 text-xs">{new Date(entry.serviced_at).toLocaleString()}</td><td className="p-3 font-mono text-xs">{entry.bus_reg}</td><td className="p-3">{entry.kind}</td><td className="p-3 text-xs">{entry.notes ?? "—"}</td><td className="p-3">{entry.next_due_km == null ? "—" : `${entry.next_due_km.toLocaleString()} km`}</td></tr>)}
+        {!serviceLogs.length && <tr><td colSpan={5} className="p-5 text-center text-sm text-muted-foreground">No service entries recorded.</td></tr>}
+      </Table>
+    </div>
     </div>
   );
 }
