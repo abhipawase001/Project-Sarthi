@@ -5,6 +5,7 @@ import { generateRoster, depotCommand } from "@/lib/depot-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Sparkles, Loader2, Send, Bus as BusIcon, Users, ClipboardList,
   Fuel, Wrench, Download, RefreshCw, AlertCircle, CheckCircle2, Pencil, Save,
@@ -43,6 +44,11 @@ export function DepotConsole() {
   const [busForm, setBusForm] = useState({ reg_no: "", route: "R1", capacity: "42", fuel_type: "diesel" });
   const [rosterForm, setRosterForm] = useState({ bus_reg: "", driver_id: "", route: "R1", shift_start: "06:00", shift_end: "14:00" });
   const [saving, setSaving] = useState(false);
+  const [accessChecking, setAccessChecking] = useState(true);
+  const [staffAllowed, setStaffAllowed] = useState(false);
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffPassword, setStaffPassword] = useState("");
+  const [staffAuthError, setStaffAuthError] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<string>("");
   const [cmd, setCmd] = useState("");
@@ -72,7 +78,38 @@ export function DepotConsole() {
     if (s.data) setServiceLogs(s.data as ServiceLog[]);
     setLoading(false);
   }
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    let active = true;
+    const checkAccess = async (userId: string | null) => {
+      if (!userId) {
+        if (active) { setStaffAllowed(false); setAccessChecking(false); setLoading(false); }
+        return;
+      }
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      if (!active) return;
+      const allowed = !error && (data ?? []).some((item) => item.role === "admin" || item.role === "dispatcher");
+      setStaffAllowed(allowed);
+      setStaffAuthError(error?.message ?? (allowed ? "" : "This account does not have depot access."));
+      setAccessChecking(false);
+      if (allowed) await refresh();
+      else setLoading(false);
+    };
+    void supabase.auth.getUser().then(({ data }) => checkAccess(data.user?.id ?? null));
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        setAccessChecking(true);
+        void checkAccess(session?.user.id ?? null);
+      }
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
+
+  async function signInStaff(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStaffAuthError("");
+    const { error } = await supabase.auth.signInWithPassword({ email: staffEmail.trim(), password: staffPassword });
+    if (error) setStaffAuthError(error.message);
+  }
 
   const driverById = (id: string | null) => drivers.find((d) => d.id === id)?.name ?? "—";
 
@@ -247,6 +284,18 @@ export function DepotConsole() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-6 py-6 space-y-5">
+        {accessChecking ? <div className="surface border border-border p-8 text-center text-sm text-muted-foreground">Checking depot access…</div> : !staffAllowed ? (
+          <section className="mx-auto max-w-md surface border border-border p-6">
+            <h1 className="font-display text-2xl font-bold">Depot staff sign-in</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Use an account already assigned the depot manager or dispatcher role.</p>
+            <form onSubmit={signInStaff} className="mt-5 space-y-3">
+              <div className="space-y-1"><Label htmlFor="staff-email">Email</Label><Input id="staff-email" type="email" autoComplete="email" value={staffEmail} onChange={(event) => setStaffEmail(event.target.value)} required /></div>
+              <div className="space-y-1"><Label htmlFor="staff-password">Password</Label><Input id="staff-password" type="password" autoComplete="current-password" value={staffPassword} onChange={(event) => setStaffPassword(event.target.value)} required /></div>
+              <Button className="w-full" type="submit"><Users />Sign in</Button>
+            </form>
+            {staffAuthError && <p className="mt-3 text-sm text-destructive" role="alert">{staffAuthError}</p>}
+          </section>
+        ) : <>
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold">Depot Admin · Paperless Ops</h1>
@@ -439,6 +488,7 @@ export function DepotConsole() {
         {tab === "fuel" && (
           <FuelTab buses={buses} fuelLogs={fuelLogs} serviceLogs={serviceLogs} onChange={refresh} onError={setSaveError} onSuccess={setSaveMessage} />
         )}
+        </>}
       </div>
     </div>
   );
