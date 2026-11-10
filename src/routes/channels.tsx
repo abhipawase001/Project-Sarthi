@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Nav } from "@/components/Nav";
 import { MessageSquare, Phone, Send, Smartphone } from "lucide-react";
-import { INITIAL_BUSES, STOPS } from "@/lib/mockData";
+import { STOPS } from "@/lib/mockData";
+import { smsReply } from "@/lib/sms.functions";
+import { emptySession, type SmsSession } from "@/lib/sms-engine";
 import { SmsEtaConsole } from "@/components/SmsEtaConsole";
 import { IvrConsole } from "@/components/IvrConsole";
 
@@ -21,28 +24,6 @@ export const Route = createFileRoute("/channels")({
 });
 
 type Msg = { from: "user" | "bot"; text: string };
-
-function reply(input: string): string {
-  const q = input.trim().toUpperCase();
-  if (!q) return "Send STOP <code> e.g. 'BUS MARKET' to get next 3 ETAs. Reply HELP for menu.";
-  if (q === "HELP" || q === "MENU") return "SARTHI menu:\n1) BUS <stop>  — next 3 ETAs\n2) ROUTE <id> — bus list\n3) SOS — alert depot\n4) ECO — your points";
-  if (q.startsWith("BUS")) {
-    const term = q.replace("BUS", "").trim().toLowerCase();
-    const stop = STOPS.find(s => s.name.toLowerCase().includes(term)) ?? STOPS[1];
-    const arr = INITIAL_BUSES.filter(b => b.nextStop.toLowerCase().includes(stop.name.toLowerCase().split(" ")[0].toLowerCase())).slice(0,3);
-    const lines = arr.length
-      ? arr.map((b,i) => `${i+1}) ${b.id} (${b.route}) ETA ${b.etaMin}m · ${b.seatsAvailable}/${b.seatsTotal} seats`).join("\n")
-      : `1) MH17-AB-1023 (R1) ETA 4m · 14/42\n2) MH17-EF-7788 (R2) ETA 7m · 28/42\n3) MH17-IJ-9090 (R3) ETA 12m · 31/42`;
-    return `Next buses → ${stop.name}\n${lines}\nReply ALERT 1 to get notified.`;
-  }
-  if (q.startsWith("ROUTE")) {
-    return "Route R1 Depot↔Malpani:\n• MH17-AB-1023 — 4m → College\n• MH17-CD-4521 — 7m → Malpani (HIGH occ)\nReply BUS <stop> for ETAs.";
-  }
-  if (q === "ECO") return "Eco wallet:\n• 2,190 pts  • 43 kg CO₂ saved\n• Rank #6 in Sangamner\nReply REDEEM to spend points.";
-  if (q === "SOS") return "🚨 SOS received. Depot notified. Stay safe — operator calling in 30s.";
-  return "Sorry, I didn't get that. Reply HELP for menu.";
-}
-
 
 function ChannelsPage() {
   return (
@@ -87,14 +68,28 @@ function ChannelsPage() {
 }
 
 function ChatBox({ title, subtitle, icon: Icon, placeholder }: { title: string; subtitle: string; icon: any; placeholder: string }) {
+  const sendReply = useServerFn(smsReply);
   const [msgs, setMsgs] = useState<Msg[]>([
-    { from: "bot", text: "Welcome to Sarthi! Reply HELP for menu, or BUS <stop> to find a bus." },
+    { from: "bot", text: "Try: ETA R1 MARKET. Replies use registered buses with a fresh GPS location." },
   ]);
+  const [session, setSession] = useState<SmsSession>(emptySession);
   const [input, setInput] = useState("");
-  const send = () => {
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
     if (!input.trim()) return;
-    setMsgs((m) => [...m, { from: "user", text: input }, { from: "bot", text: reply(input) }]);
+    const body = input;
+    setMsgs((m) => [...m, { from: "user", text: body }]);
     setInput("");
+    setBusy(true);
+    try {
+      const result = await sendReply({ data: { body, session } });
+      setSession(result.session as SmsSession);
+      setMsgs((m) => [...m, { from: "bot", text: result.reply }]);
+    } catch {
+      setMsgs((m) => [...m, { from: "bot", text: "Live arrival service is unavailable right now." }]);
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <div className="surface border border-border rounded-2xl overflow-hidden flex flex-col h-[520px]">
@@ -113,10 +108,10 @@ function ChatBox({ title, subtitle, icon: Icon, placeholder }: { title: string; 
         ))}
       </div>
       <div className="p-3 border-t border-border flex gap-2">
-        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()}
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void send()}
           placeholder={placeholder}
           className="flex-1 px-3 py-2 rounded-lg surface-2 border border-border outline-none text-sm focus:border-primary" />
-        <button onClick={send} className="px-3 rounded-lg bg-primary text-primary-foreground"><Send className="size-4" /></button>
+        <button onClick={() => void send()} disabled={busy} className="px-3 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"><Send className="size-4" /></button>
       </div>
     </div>
   );
