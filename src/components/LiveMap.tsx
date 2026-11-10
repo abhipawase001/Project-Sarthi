@@ -57,7 +57,6 @@ export function LiveMap({ buses, selectedRoute }: { buses: Bus[]; selectedRoute?
               <div className="font-bold text-sm">{b.id}</div>
               <div className="text-xs opacity-70">{b.routeName}</div>
               <div className="mt-2 text-xs grid grid-cols-2 gap-1">
-                <span>Driver:</span><span>{b.driver}</span>
                 <span>Speed:</span><span>{Math.round(b.speed)} km/h</span>
                 <span>Occupancy:</span><span className="capitalize">{b.occupancy} (driver report)</span>
                 <span>Next:</span><span>{b.nextStop}</span>

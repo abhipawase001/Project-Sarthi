@@ -42,7 +42,7 @@ export function SarthiChat({ buses }: { buses: Bus[] }) {
     .slice(0, 10)
     .map(
       (b) =>
-        `${b.id} route ${b.route} (${b.routeName}) at ${b.lat.toFixed(4)},${b.lng.toFixed(4)} speed ${Math.round(b.speed)}km/h, next stop ${b.nextStop} in ${b.etaMin}min, seats ${b.seatsAvailable}/${b.seatsTotal}, occupancy ${b.occupancy}`,
+        `${b.id} route ${b.route} (${b.routeName}) at ${b.lat.toFixed(4)},${b.lng.toFixed(4)} speed ${Math.round(b.speed)}km/h, next stop ${b.nextStop} in ${b.etaMin > 0 ? `${b.etaMin}min` : "ETA unavailable"}, driver-reported occupancy ${b.occupancy}`,
     )
     .join("\n");
 
