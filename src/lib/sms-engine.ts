@@ -21,7 +21,7 @@ export interface SmsSession {
 export interface SmsEta {
   busId: string;
   etaMin: number;
-  seats: number;
+  occupancy: Bus["occupancy"];
   status: Bus["status"];
 }
 
@@ -68,7 +68,7 @@ export function etasForStop(routeId: string, stopId: string, buses: Bus[] = []):
     .filter((b) => b.route === routeId)
     .map((b) => {
       const etaMin = estimateLiveEtaMinutes(b.lat, b.lng, b.speed, stopId, routeId);
-      return etaMin === null ? null : { busId: b.id, etaMin, seats: b.seatsAvailable, status: b.status };
+      return etaMin === null ? null : { busId: b.id, etaMin, occupancy: b.occupancy, status: b.status };
     })
     .filter((eta): eta is SmsEta => eta !== null)
     .sort((a, b) => a.etaMin - b.etaMin)
@@ -188,7 +188,7 @@ function formatEtas(routeId: string, stopId: string, lang: SmsLang, buses: Bus[]
     return { reply: t.noBus(stop.name), session: { lang, route: routeId, stopId: null } };
   }
   const lines = etas
-    .map((e, i) => `${i + 1}) ${e.busId} ${e.etaMin}min ${e.seats <= 4 ? t.full : `${e.seats} ${t.seats}`}`)
+    .map((e, i) => `${i + 1}) ${e.busId} ${e.etaMin}min ${e.occupancy}`)
     .join("\n");
   const reply = clamp160(`${routeId} > ${stop.name}\n${lines}\n${t.footer}`);
   return {

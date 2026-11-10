@@ -49,8 +49,8 @@ const T = {
     stopPrompt: "Press the number for your stop.",
     stopItem: (i: number, name: string) => `For ${name}, press ${i}.`,
     etaLead: (stop: string) => `Buses arriving at ${stop}.`,
-    etaLine: (i: number, bus: string, min: number, seats: number) =>
-      `${i}. Bus ${spellBus(bus)} in ${min} ${min === 1 ? "minute" : "minutes"}, ${seats} seats free.`,
+    etaLine: (i: number, bus: string, min: number, occupancy: string) =>
+      `${i}. Bus ${spellBus(bus)} in ${min} ${min === 1 ? "minute" : "minutes"}. Reported occupancy: ${occupancy}.`,
     noBus: (stop: string) => `Sorry, no live bus towards ${stop} right now.`,
     resultFooter: "Press 1 to hear this again. Press 9 for an arrival alert. Press 0 for the main menu.",
     alertOk: (bus: string, stop: string) =>
@@ -66,8 +66,8 @@ const T = {
     stopPrompt: "Apne stop ka number dabaiye.",
     stopItem: (i: number, name: string) => `${name} ke liye ${hiNum(i)} dabaiye.`,
     etaLead: (stop: string) => `${stop} par aane wali buses.`,
-    etaLine: (i: number, bus: string, min: number, seats: number) =>
-      `${hiNum(i)}. Bus ${spellBus(bus)}, ${min} minute mein. ${seats} seat khali hain.`,
+    etaLine: (i: number, bus: string, min: number, occupancy: string) =>
+      `${hiNum(i)}. Bus ${spellBus(bus)}, ${min} minute mein. Reported bheed ${occupancy}.`,
     noBus: (stop: string) => `Maaf kijiye, ${stop} ke liye abhi koi bus nahi hai.`,
     resultFooter: "Dobara sunne ke liye ek dabaiye. Alert ke liye nau dabaiye. Mukhya menu ke liye shunya.",
     alertOk: (bus: string, stop: string) =>
@@ -83,8 +83,8 @@ const T = {
     stopPrompt: "Aaplya thambyacha kramank dabava.",
     stopItem: (i: number, name: string) => `${name} sathi ${mrNum(i)} dabava.`,
     etaLead: (stop: string) => `${stop} la yenarya bus.`,
-    etaLine: (i: number, bus: string, min: number, seats: number) =>
-      `${mrNum(i)}. Bus ${spellBus(bus)}, ${min} minitat. ${seats} jaga rikamya aahet.`,
+    etaLine: (i: number, bus: string, min: number, occupancy: string) =>
+      `${mrNum(i)}. Bus ${spellBus(bus)}, ${min} minitat. Reported gardi ${occupancy}.`,
     noBus: (stop: string) => `Kshama kara, ${stop} sathi sadhya bus nahi.`,
     resultFooter: "Punha aikanyasathi ek dabava. Alert sathi nau dabava. Mukhya menu sathi shunya.",
     alertOk: (bus: string, stop: string) =>
@@ -132,7 +132,7 @@ function resultPrompt(lang: IvrLang, routeId: string, stopId: string, buses: Bus
   if (!stop) return t.invalid;
   const etas = etasForStop(routeId, stopId, buses);
   if (!etas.length) return `${t.noBus(stop.name)} ${t.resultFooter}`;
-  const lines = etas.map((e, i) => t.etaLine(i + 1, e.busId, e.etaMin, e.seats));
+  const lines = etas.map((e, i) => t.etaLine(i + 1, e.busId, e.etaMin, e.occupancy));
   return [t.etaLead(stop.name), ...lines, t.resultFooter].join(" ");
 }
 

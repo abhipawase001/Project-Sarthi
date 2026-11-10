@@ -5,9 +5,10 @@ import { generateRoster, depotCommand } from "@/lib/depot-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Sparkles, Loader2, Send, Bus as BusIcon, Users, ClipboardList,
-  Fuel, Wrench, Download, RefreshCw, AlertCircle, CheckCircle2,
+  Fuel, Wrench, Download, RefreshCw, AlertCircle, CheckCircle2, Pencil, Save,
 } from "lucide-react";
 
 
@@ -37,9 +38,17 @@ export function DepotConsole() {
   const [saveError, setSaveError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [crewForm, setCrewForm] = useState({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
+  const [editingCrewId, setEditingCrewId] = useState<string | null>(null);
+  const [editingBusId, setEditingBusId] = useState<string | null>(null);
+  const [busEdit, setBusEdit] = useState({ route: "", fuel_type: "diesel", capacity: "42" });
   const [busForm, setBusForm] = useState({ reg_no: "", route: "R1", capacity: "42", fuel_type: "diesel" });
   const [rosterForm, setRosterForm] = useState({ bus_reg: "", driver_id: "", route: "R1", shift_start: "06:00", shift_end: "14:00" });
   const [saving, setSaving] = useState(false);
+  const [accessChecking, setAccessChecking] = useState(true);
+  const [staffAllowed, setStaffAllowed] = useState(false);
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffPassword, setStaffPassword] = useState("");
+  const [staffAuthError, setStaffAuthError] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<string>("");
   const [cmd, setCmd] = useState("");
@@ -69,7 +78,38 @@ export function DepotConsole() {
     if (s.data) setServiceLogs(s.data as ServiceLog[]);
     setLoading(false);
   }
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    let active = true;
+    const checkAccess = async (userId: string | null) => {
+      if (!userId) {
+        if (active) { setStaffAllowed(false); setAccessChecking(false); setLoading(false); }
+        return;
+      }
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      if (!active) return;
+      const allowed = !error && (data ?? []).some((item) => item.role === "admin" || item.role === "dispatcher");
+      setStaffAllowed(allowed);
+      setStaffAuthError(error?.message ?? (allowed ? "" : "This account does not have depot access."));
+      setAccessChecking(false);
+      if (allowed) await refresh();
+      else setLoading(false);
+    };
+    void supabase.auth.getUser().then(({ data }) => checkAccess(data.user?.id ?? null));
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        setAccessChecking(true);
+        void checkAccess(session?.user.id ?? null);
+      }
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
+
+  async function signInStaff(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStaffAuthError("");
+    const { error } = await supabase.auth.signInWithPassword({ email: staffEmail.trim(), password: staffPassword });
+    if (error) setStaffAuthError(error.message);
+  }
 
   const driverById = (id: string | null) => drivers.find((d) => d.id === id)?.name ?? "—";
 
@@ -153,15 +193,45 @@ export function DepotConsole() {
   async function saveCrew(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true); setSaveError(""); setSaveMessage("");
-    const { error } = await supabase.from("drivers").insert({
+    const crewPayload = {
       name: crewForm.name.trim(), email: crewForm.email.trim().toLowerCase() || null,
       phone: crewForm.phone.trim() || null, role: crewForm.role,
       license_no: crewForm.license_no.trim() || null, license_expiry: crewForm.license_expiry || null,
-    });
+    };
+    const { error } = editingCrewId
+      ? await supabase.from("drivers").update(crewPayload).eq("id", editingCrewId)
+      : await supabase.from("drivers").insert(crewPayload);
     setSaving(false);
     if (error) { setSaveError(error.message); return; }
+    setEditingCrewId(null);
     setCrewForm({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
-    setSaveMessage("Crew record saved.");
+    setSaveMessage(editingCrewId ? "Crew record updated." : "Crew record saved.");
+    await refresh();
+  }
+
+  function editCrew(driver: Driver) {
+    setEditingCrewId(driver.id);
+    setCrewForm({
+      name: driver.name,
+      email: driver.email ?? "",
+      phone: driver.phone ?? "",
+      role: driver.role,
+      license_no: driver.license_no ?? "",
+      license_expiry: driver.license_expiry ?? "",
+    });
+    setSaveError(""); setSaveMessage("");
+  }
+
+  async function updateBus(busReg: string) {
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("buses").update({
+      route: busEdit.route.trim() || null,
+      fuel_type: busEdit.fuel_type,
+      capacity: Number(busEdit.capacity),
+    }).eq("reg_no", busReg);
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setEditingBusId(null); setSaveMessage(`${busReg} fleet details updated.`);
     await refresh();
   }
 
@@ -201,19 +271,31 @@ export function DepotConsole() {
   }
 
   function exportTrips() {
-    const csv = ["bus,route,shift_start,shift_end,driver,conductor,status"]
-      .concat(roster.map((r) => `${r.bus_reg},${r.route ?? ""},${r.shift_start},${r.shift_end},"${driverById(r.driver_id)}","${driverById(r.conductor_id)}",${r.status}`))
+    const csv = ["bus,route,driver,started_at,ended_at,distance_km"]
+      .concat(trips.map((trip) => `${trip.bus_reg ?? ""},${trip.route ?? ""},"${driverById(trip.driver_id)}",${trip.started_at},${trip.ended_at ?? ""},${trip.distance_km ?? 0}`))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `roster-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `sarthi-trips-${todayInIndia()}.csv`;
     a.click();
   }
 
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-6 py-6 space-y-5">
+        {accessChecking ? <div className="surface border border-border p-8 text-center text-sm text-muted-foreground">Checking depot access…</div> : !staffAllowed ? (
+          <section className="mx-auto max-w-md surface border border-border p-6">
+            <h1 className="font-display text-2xl font-bold">Depot staff sign-in</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Use an account already assigned the depot manager or dispatcher role.</p>
+            <form onSubmit={signInStaff} className="mt-5 space-y-3">
+              <div className="space-y-1"><Label htmlFor="staff-email">Email</Label><Input id="staff-email" type="email" autoComplete="email" value={staffEmail} onChange={(event) => setStaffEmail(event.target.value)} required /></div>
+              <div className="space-y-1"><Label htmlFor="staff-password">Password</Label><Input id="staff-password" type="password" autoComplete="current-password" value={staffPassword} onChange={(event) => setStaffPassword(event.target.value)} required /></div>
+              <Button className="w-full" type="submit"><Users />Sign in</Button>
+            </form>
+            {staffAuthError && <p className="mt-3 text-sm text-destructive" role="alert">{staffAuthError}</p>}
+          </section>
+        ) : <>
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold">Depot Admin · Paperless Ops</h1>
@@ -282,7 +364,7 @@ export function DepotConsole() {
         {tab === "roster" && (
           <div className="space-y-3">
             <div className="flex justify-between items-center gap-3 flex-wrap">
-              <div className="text-sm text-muted-foreground">{roster.length} duties scheduled for {new Date().toLocaleDateString()}</div>
+              <div className="text-sm text-muted-foreground">{roster.length} duties scheduled for {todayInIndia()}</div>
               <div className="flex gap-2">
                 <button onClick={exportTrips} className="px-3 py-2 text-xs rounded-lg surface-2 border border-border inline-flex items-center gap-1.5">
                   <Download className="size-3.5" /> Export CSV
@@ -328,14 +410,14 @@ export function DepotConsole() {
             <label className="space-y-1 text-xs text-muted-foreground">Fuel type<select value={busForm.fuel_type} onChange={(event) => setBusForm({ ...busForm, fuel_type: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="diesel">Diesel</option><option value="cng">CNG</option><option value="electric">Electric</option><option value="hybrid">Hybrid</option></select></label>
             <Button type="submit" disabled={saving}><BusIcon />Add to fleet</Button>
           </form>
-          <Table headers={["Reg No", "Route", "Fuel", "Odometer", "Health", "Status", "Next Service"]}>
+          <Table headers={["Reg No", "Route", "Fuel", "Odometer", "Health", "Status", "Next Service", "Edit"]}>
             {buses.map((b) => {
               const due = b.next_service_km != null && b.odometer_km > b.next_service_km - 2000;
               return (
                 <tr key={b.reg_no} className="border-b border-border">
                   <td className="p-3 font-mono text-xs">{b.reg_no}</td>
-                  <td className="p-3">{b.route ?? <span className="text-muted-foreground">—</span>}</td>
-                  <td className="p-3 text-xs uppercase">{b.fuel_type}</td>
+                  <td className="p-3">{editingBusId === b.reg_no ? <select value={busEdit.route} onChange={(event) => setBusEdit({ ...busEdit, route: event.target.value })} className="h-8 border border-input bg-background px-2 text-xs">{[...new Set(buses.map((bus) => bus.route).filter((route): route is string => Boolean(route)))].map((route) => <option key={route} value={route}>{route}</option>)}</select> : b.route ?? <span className="text-muted-foreground">—</span>}</td>
+                  <td className="p-3 text-xs uppercase">{editingBusId === b.reg_no ? <select value={busEdit.fuel_type} onChange={(event) => setBusEdit({ ...busEdit, fuel_type: event.target.value })} className="h-8 border border-input bg-background px-2"><option value="diesel">Diesel</option><option value="cng">CNG</option><option value="electric">Electric</option><option value="hybrid">Hybrid</option></select> : b.fuel_type}</td>
                   <td className="p-3 font-mono text-xs">{b.odometer_km.toLocaleString()} km</td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
@@ -357,6 +439,7 @@ export function DepotConsole() {
                     </select>
                   </td>
                   <td className="p-3 text-xs">{due ? <span className="text-warn">⚠ due soon</span> : <span className="text-muted-foreground">{b.next_service_km?.toLocaleString()} km</span>}</td>
+                  <td className="p-3">{editingBusId === b.reg_no ? <div className="flex items-center gap-1"><input type="number" min="1" max="100" value={busEdit.capacity} onChange={(event) => setBusEdit({ ...busEdit, capacity: event.target.value })} aria-label={`Capacity for ${b.reg_no}`} className="h-8 w-16 border border-input bg-background px-2 text-xs" /><Button size="icon" aria-label={`Save ${b.reg_no}`} disabled={saving} onClick={() => void updateBus(b.reg_no)}><Save /></Button></div> : <Button size="icon" variant="ghost" aria-label={`Edit ${b.reg_no}`} onClick={() => { setEditingBusId(b.reg_no); setBusEdit({ route: b.route ?? "", fuel_type: b.fuel_type, capacity: String(b.capacity) }); }}><Pencil /></Button>}</td>
                 </tr>
               );
             })}
@@ -373,9 +456,9 @@ export function DepotConsole() {
             <label className="space-y-1 text-xs text-muted-foreground">Crew role<select value={crewForm.role} onChange={(event) => setCrewForm({ ...crewForm, role: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="driver">Driver</option><option value="conductor">Conductor</option></select></label>
             <label className="space-y-1 text-xs text-muted-foreground">License number<input value={crewForm.license_no} onChange={(event) => setCrewForm({ ...crewForm, license_no: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
             <label className="space-y-1 text-xs text-muted-foreground">License expiry<input type="date" value={crewForm.license_expiry} onChange={(event) => setCrewForm({ ...crewForm, license_expiry: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
-            <div className="md:col-span-3"><Button type="submit" disabled={saving}><Users />Add crew record</Button></div>
+            <div className="flex gap-2 md:col-span-3"><Button type="submit" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : editingCrewId ? <Save /> : <Users />}{editingCrewId ? "Save crew changes" : "Add crew record"}</Button>{editingCrewId && <Button type="button" variant="outline" onClick={() => { setEditingCrewId(null); setCrewForm({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" }); }}>Cancel</Button>}</div>
           </form>
-          <Table headers={["Name", "Role", "License", "Expiry", "Phone", "Rating", "Status"]}>
+          <Table headers={["Name", "Role", "License", "Expiry", "Phone", "Rating", "Status", "Edit"]}>
             {drivers.map((d) => {
               const expSoon = d.license_expiry && new Date(d.license_expiry) < new Date(Date.now() + 1000 * 60 * 60 * 24 * 180);
               return (
@@ -387,6 +470,7 @@ export function DepotConsole() {
                   <td className="p-3 font-mono text-xs">{d.phone ?? "—"}</td>
                   <td className="p-3 text-eco font-mono">{Number(d.rating).toFixed(1)} ★</td>
                   <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">{d.status}</span></td>
+                  <td className="p-3"><Button size="icon" variant="ghost" aria-label={`Edit ${d.name}`} onClick={() => editCrew(d)}><Pencil /></Button></td>
                 </tr>
               );
             })}
@@ -404,6 +488,7 @@ export function DepotConsole() {
         {tab === "fuel" && (
           <FuelTab buses={buses} fuelLogs={fuelLogs} serviceLogs={serviceLogs} onChange={refresh} onError={setSaveError} onSuccess={setSaveMessage} />
         )}
+        </>}
       </div>
     </div>
   );
