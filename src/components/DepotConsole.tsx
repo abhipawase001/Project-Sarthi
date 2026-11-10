@@ -361,14 +361,14 @@ export function DepotConsole() {
             <label className="space-y-1 text-xs text-muted-foreground">Fuel type<select value={busForm.fuel_type} onChange={(event) => setBusForm({ ...busForm, fuel_type: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="diesel">Diesel</option><option value="cng">CNG</option><option value="electric">Electric</option><option value="hybrid">Hybrid</option></select></label>
             <Button type="submit" disabled={saving}><BusIcon />Add to fleet</Button>
           </form>
-          <Table headers={["Reg No", "Route", "Fuel", "Odometer", "Health", "Status", "Next Service"]}>
+          <Table headers={["Reg No", "Route", "Fuel", "Odometer", "Health", "Status", "Next Service", "Edit"]}>
             {buses.map((b) => {
               const due = b.next_service_km != null && b.odometer_km > b.next_service_km - 2000;
               return (
                 <tr key={b.reg_no} className="border-b border-border">
                   <td className="p-3 font-mono text-xs">{b.reg_no}</td>
-                  <td className="p-3">{b.route ?? <span className="text-muted-foreground">—</span>}</td>
-                  <td className="p-3 text-xs uppercase">{b.fuel_type}</td>
+                  <td className="p-3">{editingBusId === b.reg_no ? <select value={busEdit.route} onChange={(event) => setBusEdit({ ...busEdit, route: event.target.value })} className="h-8 border border-input bg-background px-2 text-xs">{[...new Set(buses.map((bus) => bus.route).filter((route): route is string => Boolean(route)))].map((route) => <option key={route} value={route}>{route}</option>)}</select> : b.route ?? <span className="text-muted-foreground">—</span>}</td>
+                  <td className="p-3 text-xs uppercase">{editingBusId === b.reg_no ? <select value={busEdit.fuel_type} onChange={(event) => setBusEdit({ ...busEdit, fuel_type: event.target.value })} className="h-8 border border-input bg-background px-2"><option value="diesel">Diesel</option><option value="cng">CNG</option><option value="electric">Electric</option><option value="hybrid">Hybrid</option></select> : b.fuel_type}</td>
                   <td className="p-3 font-mono text-xs">{b.odometer_km.toLocaleString()} km</td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
@@ -390,6 +390,7 @@ export function DepotConsole() {
                     </select>
                   </td>
                   <td className="p-3 text-xs">{due ? <span className="text-warn">⚠ due soon</span> : <span className="text-muted-foreground">{b.next_service_km?.toLocaleString()} km</span>}</td>
+                  <td className="p-3">{editingBusId === b.reg_no ? <div className="flex items-center gap-1"><input type="number" min="1" max="100" value={busEdit.capacity} onChange={(event) => setBusEdit({ ...busEdit, capacity: event.target.value })} aria-label={`Capacity for ${b.reg_no}`} className="h-8 w-16 border border-input bg-background px-2 text-xs" /><Button size="icon" aria-label={`Save ${b.reg_no}`} disabled={saving} onClick={() => void updateBus(b.reg_no)}><Save /></Button></div> : <Button size="icon" variant="ghost" aria-label={`Edit ${b.reg_no}`} onClick={() => { setEditingBusId(b.reg_no); setBusEdit({ route: b.route ?? "", fuel_type: b.fuel_type, capacity: String(b.capacity) }); }}><Pencil /></Button>}</td>
                 </tr>
               );
             })}
@@ -406,9 +407,9 @@ export function DepotConsole() {
             <label className="space-y-1 text-xs text-muted-foreground">Crew role<select value={crewForm.role} onChange={(event) => setCrewForm({ ...crewForm, role: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground"><option value="driver">Driver</option><option value="conductor">Conductor</option></select></label>
             <label className="space-y-1 text-xs text-muted-foreground">License number<input value={crewForm.license_no} onChange={(event) => setCrewForm({ ...crewForm, license_no: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
             <label className="space-y-1 text-xs text-muted-foreground">License expiry<input type="date" value={crewForm.license_expiry} onChange={(event) => setCrewForm({ ...crewForm, license_expiry: event.target.value })} className="h-9 w-full border border-input bg-background px-2 text-foreground" /></label>
-            <div className="md:col-span-3"><Button type="submit" disabled={saving}><Users />Add crew record</Button></div>
+            <div className="flex gap-2 md:col-span-3"><Button type="submit" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : editingCrewId ? <Save /> : <Users />}{editingCrewId ? "Save crew changes" : "Add crew record"}</Button>{editingCrewId && <Button type="button" variant="outline" onClick={() => { setEditingCrewId(null); setCrewForm({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" }); }}>Cancel</Button>}</div>
           </form>
-          <Table headers={["Name", "Role", "License", "Expiry", "Phone", "Rating", "Status"]}>
+          <Table headers={["Name", "Role", "License", "Expiry", "Phone", "Rating", "Status", "Edit"]}>
             {drivers.map((d) => {
               const expSoon = d.license_expiry && new Date(d.license_expiry) < new Date(Date.now() + 1000 * 60 * 60 * 24 * 180);
               return (
@@ -420,6 +421,7 @@ export function DepotConsole() {
                   <td className="p-3 font-mono text-xs">{d.phone ?? "—"}</td>
                   <td className="p-3 text-eco font-mono">{Number(d.rating).toFixed(1)} ★</td>
                   <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">{d.status}</span></td>
+                  <td className="p-3"><Button size="icon" variant="ghost" aria-label={`Edit ${d.name}`} onClick={() => editCrew(d)}><Pencil /></Button></td>
                 </tr>
               );
             })}
