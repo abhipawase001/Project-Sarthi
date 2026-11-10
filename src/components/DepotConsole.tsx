@@ -234,13 +234,13 @@ export function DepotConsole() {
   }
 
   function exportTrips() {
-    const csv = ["bus,route,shift_start,shift_end,driver,conductor,status"]
-      .concat(roster.map((r) => `${r.bus_reg},${r.route ?? ""},${r.shift_start},${r.shift_end},"${driverById(r.driver_id)}","${driverById(r.conductor_id)}",${r.status}`))
+    const csv = ["bus,route,driver,started_at,ended_at,distance_km"]
+      .concat(trips.map((trip) => `${trip.bus_reg ?? ""},${trip.route ?? ""},"${driverById(trip.driver_id)}",${trip.started_at},${trip.ended_at ?? ""},${trip.distance_km ?? 0}`))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `roster-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `sarthi-trips-${todayInIndia()}.csv`;
     a.click();
   }
 
@@ -315,7 +315,7 @@ export function DepotConsole() {
         {tab === "roster" && (
           <div className="space-y-3">
             <div className="flex justify-between items-center gap-3 flex-wrap">
-              <div className="text-sm text-muted-foreground">{roster.length} duties scheduled for {new Date().toLocaleDateString()}</div>
+              <div className="text-sm text-muted-foreground">{roster.length} duties scheduled for {todayInIndia()}</div>
               <div className="flex gap-2">
                 <button onClick={exportTrips} className="px-3 py-2 text-xs rounded-lg surface-2 border border-border inline-flex items-center gap-1.5">
                   <Download className="size-3.5" /> Export CSV
