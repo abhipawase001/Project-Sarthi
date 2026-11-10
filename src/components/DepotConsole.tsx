@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Sparkles, Loader2, Send, Bus as BusIcon, Users, ClipboardList,
-  Fuel, Wrench, Download, RefreshCw, AlertCircle, CheckCircle2,
+  Fuel, Wrench, Download, RefreshCw, AlertCircle, CheckCircle2, Pencil, Save,
 } from "lucide-react";
 
 
@@ -37,6 +37,9 @@ export function DepotConsole() {
   const [saveError, setSaveError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [crewForm, setCrewForm] = useState({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
+  const [editingCrewId, setEditingCrewId] = useState<string | null>(null);
+  const [editingBusId, setEditingBusId] = useState<string | null>(null);
+  const [busEdit, setBusEdit] = useState({ route: "", fuel_type: "diesel", capacity: "42" });
   const [busForm, setBusForm] = useState({ reg_no: "", route: "R1", capacity: "42", fuel_type: "diesel" });
   const [rosterForm, setRosterForm] = useState({ bus_reg: "", driver_id: "", route: "R1", shift_start: "06:00", shift_end: "14:00" });
   const [saving, setSaving] = useState(false);
@@ -153,15 +156,45 @@ export function DepotConsole() {
   async function saveCrew(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true); setSaveError(""); setSaveMessage("");
-    const { error } = await supabase.from("drivers").insert({
+    const crewPayload = {
       name: crewForm.name.trim(), email: crewForm.email.trim().toLowerCase() || null,
       phone: crewForm.phone.trim() || null, role: crewForm.role,
       license_no: crewForm.license_no.trim() || null, license_expiry: crewForm.license_expiry || null,
-    });
+    };
+    const { error } = editingCrewId
+      ? await supabase.from("drivers").update(crewPayload).eq("id", editingCrewId)
+      : await supabase.from("drivers").insert(crewPayload);
     setSaving(false);
     if (error) { setSaveError(error.message); return; }
+    setEditingCrewId(null);
     setCrewForm({ name: "", email: "", phone: "", role: "driver", license_no: "", license_expiry: "" });
-    setSaveMessage("Crew record saved.");
+    setSaveMessage(editingCrewId ? "Crew record updated." : "Crew record saved.");
+    await refresh();
+  }
+
+  function editCrew(driver: Driver) {
+    setEditingCrewId(driver.id);
+    setCrewForm({
+      name: driver.name,
+      email: driver.email ?? "",
+      phone: driver.phone ?? "",
+      role: driver.role,
+      license_no: driver.license_no ?? "",
+      license_expiry: driver.license_expiry ?? "",
+    });
+    setSaveError(""); setSaveMessage("");
+  }
+
+  async function updateBus(busReg: string) {
+    setSaving(true); setSaveError(""); setSaveMessage("");
+    const { error } = await supabase.from("buses").update({
+      route: busEdit.route.trim() || null,
+      fuel_type: busEdit.fuel_type,
+      capacity: Number(busEdit.capacity),
+    }).eq("reg_no", busReg);
+    setSaving(false);
+    if (error) { setSaveError(error.message); return; }
+    setEditingBusId(null); setSaveMessage(`${busReg} fleet details updated.`);
     await refresh();
   }
 
