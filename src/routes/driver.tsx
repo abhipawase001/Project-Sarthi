@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { ROUTES, STOPS, type Bus } from "@/lib/mockData";
-import { AlertTriangle, Battery, Bus as BusIcon, Loader2, LogIn, LogOut, MapPin, Pause, Play, Route as RouteIcon, Satellite, Wifi } from "lucide-react";
+import { Bus as BusIcon, Loader2, LogIn, LogOut, MapPin, Pause, Play, Route as RouteIcon, Satellite, Wifi } from "lucide-react";
 
 export const Route = createFileRoute("/driver")({
   head: () => ({
@@ -98,7 +98,6 @@ function DriverPage() {
   const [sent, setSent] = useState(0);
   const [queued, setQueued] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
-  const [battery] = useState(() => typeof navigator === "undefined" ? null : (navigator as Navigator & { getBattery?: () => Promise<{ level: number }> }).getBattery);
   const gpsRef = useRef<GpsFix | null>(null);
 
   const selectedAssignment = assignments.find((assignment) => assignment.id === assignmentId) ?? null;
@@ -333,7 +332,7 @@ function DriverPage() {
       const saved = localStorage.getItem(PING_QUEUE_KEY);
       let pending: QueuedPing[] = [];
       try { pending = saved ? JSON.parse(saved) as QueuedPing[] : []; } catch { pending = []; }
-      pending = [...pending, current].slice(-200);
+      pending = [...pending.filter((item) => item.roster_id === selectedAssignment.id && item.driver_id === driverId), current].slice(-200);
       localStorage.setItem(PING_QUEUE_KEY, JSON.stringify(pending));
       setQueued(pending.length);
       if (!navigator.onLine) { sending = false; return; }
@@ -345,16 +344,21 @@ function DriverPage() {
         sending = false;
         return;
       }
-      const { error } = await supabase.from("bus_pings").insert(valid);
-      if (disposed) { sending = false; return; }
-      if (error) {
-        setShiftMessage(error.message);
-      } else {
-        localStorage.removeItem(PING_QUEUE_KEY);
-        setQueued(0);
-        setSent((count) => count + valid.length);
+      try {
+        const { error } = await supabase.from("bus_pings").insert(valid);
+        if (disposed) { sending = false; return; }
+        if (error) {
+          setShiftMessage(error.message);
+        } else {
+          localStorage.removeItem(PING_QUEUE_KEY);
+          setQueued(0);
+          setSent((count) => count + valid.length);
+        }
+      } catch (error) {
+        if (!disposed) setShiftMessage(error instanceof Error ? error.message : "Location upload failed; it will retry.");
+      } finally {
+        sending = false;
       }
-      sending = false;
     };
     const timer = window.setInterval(() => { void send(); }, 5_000);
     return () => {
@@ -458,8 +462,7 @@ function DriverPage() {
               <div className="surface h-[min(65vh,620px)] min-h-[360px] overflow-hidden border border-border">
                 {meLive ? <ClientMap buses={[meLive]} selectedRoute={meLive.route} /> : <div className="grid h-full place-items-center p-6 text-center text-sm text-muted-foreground"><div><MapPin className="mx-auto mb-2 size-6" />The map shows your assigned bus after you start the shift and the phone receives a GPS fix.</div></div>}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Battery className="size-4" />Location sharing requires an active shift and your device’s location permission.</div>
-              <div className="sr-only">{battery ? "Battery level available" : ""}</div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Satellite className="size-4" />Location sharing requires an active shift and your device’s location permission.</div>
             </section>
           </div>
         )}

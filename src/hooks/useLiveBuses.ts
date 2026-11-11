@@ -34,16 +34,6 @@ export function useLiveBuses(_intervalMs = 10_000) {
       ));
     };
     void refresh();
-
-    const channel = supabase
-      .channel(`live-bus-positions-${crypto.randomUUID()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_bus_positions" }, () => {
-        void refresh();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "buses" }, () => {
-        void refresh();
-      })
-      .subscribe();
     const refreshTimer = window.setInterval(() => { void refresh(); }, 10_000);
     const clockTimer = window.setInterval(() => setNow(Date.now()), 5_000);
 
@@ -51,7 +41,6 @@ export function useLiveBuses(_intervalMs = 10_000) {
       active = false;
       window.clearInterval(refreshTimer);
       window.clearInterval(clockTimer);
-      void supabase.removeChannel(channel);
     };
   }, []);
 
