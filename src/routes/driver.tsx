@@ -80,6 +80,7 @@ function makeAssignedBus(assignment: Assignment, fix: GpsFix): Bus | null {
 function DriverPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [linkingDriver, setLinkingDriver] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -158,6 +159,7 @@ function DriverPage() {
   useEffect(() => {
     if (!userId) return;
     let active = true;
+    setLinkingDriver(true);
     void (async () => {
       try {
         const { data, error } = await supabase.rpc("link_driver_account");
@@ -170,6 +172,8 @@ function DriverPage() {
         if (active) {
           setDriverId(null);
           setAuthMessage(error instanceof Error ? error.message : "Could not connect this account to a crew record.");
+      } finally {
+        if (active) setLinkingDriver(false);
         }
       }
     })();
@@ -401,6 +405,8 @@ function DriverPage() {
             <Button variant="link" className="mt-2 px-0" onClick={() => { setIsSignUp((value) => !value); setAuthMessage(""); }}>{isSignUp ? "Already have an account? Sign in" : "First time? Create your driver account"}</Button>
             {authMessage && <p className="mt-3 text-sm text-muted-foreground" role="status">{authMessage}</p>}
           </section>
+        ) : linkingDriver ? (
+          <div className="surface border border-border p-8 text-center"><Loader2 className="mx-auto size-5 animate-spin" /><p className="mt-3 text-sm text-muted-foreground">Checking your crew account and shift assignments…</p></div>
         ) : !driverId ? (
           <section className="mx-auto max-w-xl surface border border-border p-6">
             <h2 className="font-display text-xl font-semibold">Crew record not linked</h2>

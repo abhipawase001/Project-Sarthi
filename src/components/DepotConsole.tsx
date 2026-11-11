@@ -44,6 +44,7 @@ export function DepotConsole() {
   const [rosterForm, setRosterForm] = useState({ bus_reg: "", driver_id: "", route: "R1", shift_start: "06:00", shift_end: "14:00" });
   const [saving, setSaving] = useState(false);
   const [accessChecking, setAccessChecking] = useState(true);
+  const [staffSessionPresent, setStaffSessionPresent] = useState(false);
   const [staffAllowed, setStaffAllowed] = useState(false);
   const [staffEmail, setStaffEmail] = useState("");
   const [staffPassword, setStaffPassword] = useState("");
@@ -81,9 +82,10 @@ export function DepotConsole() {
     let active = true;
     const checkAccess = async (userId: string | null) => {
       if (!userId) {
-        if (active) { setStaffAllowed(false); setAccessChecking(false); setLoading(false); }
+        if (active) { setStaffSessionPresent(false); setStaffAllowed(false); setAccessChecking(false); setLoading(false); }
         return;
       }
+      if (active) setStaffSessionPresent(true);
       const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
       if (!active) return;
       const allowed = !error && (data ?? []).some((item) => item.role === "admin" || item.role === "dispatcher");
@@ -284,15 +286,16 @@ export function DepotConsole() {
     <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-6 py-6 space-y-5">
         {accessChecking ? <div className="surface border border-border p-8 text-center text-sm text-muted-foreground">Checking depot access…</div> : !staffAllowed ? (
-          <section className="mx-auto max-w-md surface border border-border p-6">
+        <section className="mx-auto max-w-md surface border border-border p-6">
             <h1 className="font-display text-2xl font-bold">Depot staff sign-in</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Use an account already assigned the depot manager or dispatcher role.</p>
+            <p className="mt-2 text-sm text-muted-foreground">{staffSessionPresent ? "This signed-in account is not assigned the depot manager or dispatcher role." : "Use an account already assigned the depot manager or dispatcher role."}</p>
+            {staffSessionPresent && <Button variant="outline" className="mt-4" onClick={async () => { await supabase.auth.signOut(); }}><LogOut />Sign out</Button>}
             <form onSubmit={signInStaff} className="mt-5 space-y-3">
               <div className="space-y-1"><Label htmlFor="staff-email">Email</Label><Input id="staff-email" type="email" autoComplete="email" value={staffEmail} onChange={(event) => setStaffEmail(event.target.value)} required /></div>
               <div className="space-y-1"><Label htmlFor="staff-password">Password</Label><Input id="staff-password" type="password" autoComplete="current-password" value={staffPassword} onChange={(event) => setStaffPassword(event.target.value)} required /></div>
               <Button className="w-full" type="submit"><Users />Sign in</Button>
             </form>
-            {staffAuthError && <p className="mt-3 text-sm text-destructive" role="alert">{staffAuthError}</p>}
+            {!staffSessionPresent && staffAuthError && <p className="mt-3 text-sm text-destructive" role="alert">{staffAuthError}</p>}
           </section>
         ) : <>
         <div className="flex items-end justify-between flex-wrap gap-3">
