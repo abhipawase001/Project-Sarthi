@@ -172,9 +172,9 @@ function DriverPage() {
         if (active) {
           setDriverId(null);
           setAuthMessage(error instanceof Error ? error.message : "Could not connect this account to a crew record.");
+        }
       } finally {
         if (active) setLinkingDriver(false);
-        }
       }
     })();
     return () => { active = false; };
