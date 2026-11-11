@@ -33,10 +33,7 @@ function hashPhone(phone: string, salt: string) {
 }
 
 function twiml(text: string) {
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escaped}</Message></Response>`;
 }
 
@@ -82,7 +79,9 @@ export const Route = createFileRoute("/api/public/sms")({
         const phoneHash = hashPhone(payload.from, salt);
 
         let session: SmsSession = emptySession;
-        let admin: typeof import("@/integrations/supabase/client.server")["supabaseAdmin"] | null = null;
+        let admin:
+          | (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"]
+          | null = null;
 
         if (!dryRun) {
           try {
@@ -109,7 +108,10 @@ export const Route = createFileRoute("/api/public/sms")({
         try {
           buses = await getFreshLiveFleet();
         } catch {
-          return Response.json({ error: "Live bus data is temporarily unavailable" }, { status: 503 });
+          return Response.json(
+            { error: "Live bus data is temporarily unavailable" },
+            { status: 503 },
+          );
         }
         const result = parseSms(payload.body, session, buses);
 
@@ -142,8 +144,9 @@ export const Route = createFileRoute("/api/public/sms")({
           }
         }
 
-        const wantsXml = (request.headers.get("user-agent") ?? "").includes("Twilio")
-          || new URL(request.url).searchParams.get("format") === "twiml";
+        const wantsXml =
+          (request.headers.get("user-agent") ?? "").includes("Twilio") ||
+          new URL(request.url).searchParams.get("format") === "twiml";
 
         if (wantsXml) {
           return new Response(twiml(result.reply), {

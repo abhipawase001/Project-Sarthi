@@ -1,4 +1,12 @@
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, Tooltip, Marker } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  Popup,
+  Polyline,
+  Tooltip,
+  Marker,
+} from "react-leaflet";
 import L from "leaflet";
 import { CITY_CENTER, ROUTES, STOPS, type Bus } from "@/lib/mockData";
 
@@ -23,7 +31,8 @@ function busIcon(b: Bus) {
 
 const stopIcon = L.divIcon({
   className: "",
-  iconSize: [12, 12], iconAnchor: [6, 6],
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
   html: `<div style="width:12px;height:12px;border-radius:9999px;background:#0b1220;border:2px solid #22d3ee;box-shadow:0 0 8px #22d3ee99;"></div>`,
 });
 
@@ -32,7 +41,7 @@ export function LiveMap({ buses, selectedRoute }: { buses: Bus[]; selectedRoute?
   return (
     <MapContainer center={CITY_CENTER} zoom={14} className="h-full w-full" scrollWheelZoom>
       <TileLayer
-        attribution='&copy; OpenStreetMap'
+        attribution="&copy; OpenStreetMap"
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {/* Route polylines */}
@@ -40,13 +49,19 @@ export function LiveMap({ buses, selectedRoute }: { buses: Bus[]; selectedRoute?
         if (selectedRoute && selectedRoute !== rid) return null;
         const pts = r.path.map((sid) => [stopById[sid].lat, stopById[sid].lng] as [number, number]);
         return (
-          <Polyline key={rid} positions={pts} pathOptions={{ color: r.color, weight: 4, opacity: 0.55, dashArray: "8 6" }} />
+          <Polyline
+            key={rid}
+            positions={pts}
+            pathOptions={{ color: r.color, weight: 4, opacity: 0.55, dashArray: "8 6" }}
+          />
         );
       })}
       {/* Stops */}
       {STOPS.map((s) => (
         <Marker key={s.id} position={[s.lat, s.lng]} icon={stopIcon}>
-          <Tooltip direction="top" offset={[0, -6]}>{s.name}</Tooltip>
+          <Tooltip direction="top" offset={[0, -6]}>
+            {s.name}
+          </Tooltip>
         </Marker>
       ))}
       {/* Buses */}
@@ -57,10 +72,14 @@ export function LiveMap({ buses, selectedRoute }: { buses: Bus[]; selectedRoute?
               <div className="font-bold text-sm">{b.id}</div>
               <div className="text-xs opacity-70">{b.routeName}</div>
               <div className="mt-2 text-xs grid grid-cols-2 gap-1">
-                <span>Speed:</span><span>{Math.round(b.speed)} km/h</span>
-                <span>Occupancy:</span><span className="capitalize">{b.occupancy} (driver report)</span>
-                <span>Next:</span><span>{b.nextStop}</span>
-                <span>ETA:</span><span>{b.etaMin > 0 ? `${b.etaMin} min` : "Unavailable"}</span>
+                <span>Speed:</span>
+                <span>{Math.round(b.speed)} km/h</span>
+                <span>Occupancy:</span>
+                <span className="capitalize">{b.occupancy} (driver report)</span>
+                <span>Next:</span>
+                <span>{b.nextStop}</span>
+                <span>ETA:</span>
+                <span>{b.etaMin > 0 ? `${b.etaMin} min` : "Unavailable"}</span>
               </div>
             </div>
           </Popup>
@@ -68,7 +87,12 @@ export function LiveMap({ buses, selectedRoute }: { buses: Bus[]; selectedRoute?
       ))}
       {/* Bus accuracy ring */}
       {buses.map((b) => (
-        <CircleMarker key={`r-${b.id}`} center={[b.lat, b.lng]} radius={20} pathOptions={{ color: occupancyColor(b.occupancy), opacity: 0.25, fillOpacity: 0.05 }} />
+        <CircleMarker
+          key={`r-${b.id}`}
+          center={[b.lat, b.lng]}
+          radius={20}
+          pathOptions={{ color: occupancyColor(b.occupancy), opacity: 0.25, fillOpacity: 0.05 }}
+        />
       ))}
     </MapContainer>
   );
