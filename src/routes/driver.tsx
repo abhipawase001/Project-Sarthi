@@ -430,7 +430,10 @@ function DriverPage() {
         return;
       }
       try {
-        const { error } = await supabase.from("bus_pings").insert(valid);
+        const { error } = await supabase.from("bus_pings").upsert(valid, {
+          onConflict: "client_ping_id",
+          ignoreDuplicates: true,
+        });
         if (disposed) {
           sending = false;
           return;
