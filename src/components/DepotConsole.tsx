@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Pencil,
   Save,
+  LogOut,
 } from "lucide-react";
 
 type Tab = "roster" | "fleet" | "crew" | "trips" | "fuel";
