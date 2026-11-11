@@ -33,7 +33,11 @@ function hash(value: string, salt: string) {
 }
 
 function escapeXml(text: string) {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 /** Twilio TwiML with AI voice audio and digit gathering. */
@@ -93,7 +97,8 @@ export const Route = createFileRoute("/api/public/ivr")({
 
         if (secret) {
           const provided = request.headers.get("x-ivr-secret") ?? url.searchParams.get("key") ?? "";
-          if (!safeEqual(provided, secret)) return new Response("Invalid signature", { status: 401 });
+          if (!safeEqual(provided, secret))
+            return new Response("Invalid signature", { status: 401 });
         }
 
         let payload: z.infer<typeof payloadSchema>;
@@ -108,8 +113,9 @@ export const Route = createFileRoute("/api/public/ivr")({
         const phoneHash = payload.from ? hash(payload.from, salt) : null;
 
         let call: IvrCallState = initialCall;
-        let admin: Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"] | null =
-          null;
+        let admin:
+          | Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"]
+          | null = null;
 
         if (!dryRun) {
           try {
@@ -137,7 +143,10 @@ export const Route = createFileRoute("/api/public/ivr")({
         try {
           buses = await getFreshLiveFleet();
         } catch {
-          return Response.json({ error: "Live bus data is temporarily unavailable" }, { status: 503 });
+          return Response.json(
+            { error: "Live bus data is temporarily unavailable" },
+            { status: 503 },
+          );
         }
         const step = ivrStep(call, payload.digits || null, buses);
 
@@ -208,7 +217,8 @@ export const Route = createFileRoute("/api/public/ivr")({
         Response.json({
           service: "sarthi-ivr",
           status: process.env["IVR_WEBHOOK_SECRET"] ? "live" : "dry-run",
-          usage: "POST { callSid, from, digits } — add ?format=twiml or ?format=exotel for provider XML",
+          usage:
+            "POST { callSid, from, digits } — add ?format=twiml or ?format=exotel for provider XML",
         }),
     },
   },

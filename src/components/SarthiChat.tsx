@@ -60,7 +60,10 @@ export function SarthiChat({ buses }: { buses: Bus[] }) {
       setMsgs([...next, { role: "assistant", content: reply }]);
       speak(reply, lang);
     } catch (e: any) {
-      setMsgs([...next, { role: "assistant", content: `⚠️ ${e.message ?? "Something went wrong"}` }]);
+      setMsgs([
+        ...next,
+        { role: "assistant", content: `⚠️ ${e.message ?? "Something went wrong"}` },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -107,16 +110,27 @@ export function SarthiChat({ buses }: { buses: Bus[] }) {
               </div>
               <div>
                 <div className="font-display font-semibold text-sm">Sarthi AI</div>
-                <div className="text-[10px] text-muted-foreground">Multilingual transit assistant</div>
+                <div className="text-[10px] text-muted-foreground">
+                  Multilingual transit assistant
+                </div>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground"><X className="size-4" /></button>
+            <button
+              onClick={() => setOpen(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
           </div>
 
           <div className="px-3 py-2 border-b border-border flex items-center gap-1 text-xs">
             <Languages className="size-3.5 text-muted-foreground" />
             {(["en", "hi", "mr"] as Lang[]).map((l) => (
-              <button key={l} onClick={() => setLang(l)} className={`px-2 py-0.5 rounded-md ${lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`px-2 py-0.5 rounded-md ${lang === l ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
                 {l === "en" ? "English" : l === "hi" ? "हिंदी" : "मराठी"}
               </button>
             ))}
@@ -124,30 +138,57 @@ export function SarthiChat({ buses }: { buses: Bus[] }) {
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-2 text-sm">
             {msgs.length === 0 && (
-              <div className="text-muted-foreground text-xs surface-2 border border-border rounded-xl p-3">{GREETING[lang]}</div>
+              <div className="text-muted-foreground text-xs surface-2 border border-border rounded-xl p-3">
+                {GREETING[lang]}
+              </div>
             )}
             {msgs.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-2xl px-3 py-2 whitespace-pre-wrap ${m.role === "user" ? "bg-primary text-primary-foreground" : "surface-2 border border-border"}`}>
+              <div
+                key={i}
+                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3 py-2 whitespace-pre-wrap ${m.role === "user" ? "bg-primary text-primary-foreground" : "surface-2 border border-border"}`}
+                >
                   {m.content}
                 </div>
               </div>
             ))}
-            {loading && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Sarthi is thinking…</div>}
+            {loading && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="size-3 animate-spin" /> Sarthi is thinking…
+              </div>
+            )}
           </div>
 
           <form
-            onSubmit={(e) => { e.preventDefault(); send(input); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(input);
+            }}
             className="border-t border-border p-2 flex items-center gap-1"
           >
-            <button type="button" onClick={startVoice} className="p-2 rounded-lg hover:bg-surface text-muted-foreground" aria-label="Voice input"><Mic className="size-4" /></button>
+            <button
+              type="button"
+              onClick={startVoice}
+              className="p-2 rounded-lg hover:bg-surface text-muted-foreground"
+              aria-label="Voice input"
+            >
+              <Mic className="size-4" />
+            </button>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={PLACEHOLDER[lang]}
               className="flex-1 bg-transparent outline-none text-sm px-2 placeholder:text-muted-foreground"
             />
-            <button type="submit" disabled={loading || !input.trim()} className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"><Send className="size-4" /></button>
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
+            >
+              <Send className="size-4" />
+            </button>
           </form>
         </div>
       )}

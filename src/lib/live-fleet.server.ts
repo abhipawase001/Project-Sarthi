@@ -23,7 +23,8 @@ export async function getFreshLiveFleet() {
 
   const [busesResult, positionsResult] = await Promise.all([
     client.from("buses").select("reg_no,route,capacity,status").eq("status", "active"),
-    client.from("live_bus_positions")
+    client
+      .from("live_bus_positions")
       .select("bus_id,route,lat,lng,speed,heading,occupancy,observed_at,accuracy_m")
       .gte("observed_at", new Date(Date.now() - 60_000).toISOString()),
   ]);

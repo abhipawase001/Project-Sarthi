@@ -17,7 +17,8 @@ export function useLiveBuses(_intervalMs = 10_000) {
     const refresh = async () => {
       const [registryResult, positionResult] = await Promise.all([
         supabase.from("buses").select("reg_no,route,capacity,status").eq("status", "active"),
-        supabase.from("live_bus_positions")
+        supabase
+          .from("live_bus_positions")
           .select("bus_id,route,lat,lng,speed,heading,occupancy,observed_at,accuracy_m")
           .gte("observed_at", new Date(Date.now() - 60_000).toISOString()),
       ]);
@@ -27,14 +28,18 @@ export function useLiveBuses(_intervalMs = 10_000) {
         setBuses([]);
         return;
       }
-      setBuses(buildLiveFleet(
-        (registryResult.data ?? []) as RegisteredBus[],
-        (positionResult.data ?? []) as LivePosition[],
-        Date.now(),
-      ));
+      setBuses(
+        buildLiveFleet(
+          (registryResult.data ?? []) as RegisteredBus[],
+          (positionResult.data ?? []) as LivePosition[],
+          Date.now(),
+        ),
+      );
     };
     void refresh();
-    const refreshTimer = window.setInterval(() => { void refresh(); }, 10_000);
+    const refreshTimer = window.setInterval(() => {
+      void refresh();
+    }, 10_000);
     const clockTimer = window.setInterval(() => setNow(Date.now()), 5_000);
 
     return () => {

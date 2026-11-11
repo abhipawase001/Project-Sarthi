@@ -52,7 +52,8 @@ const T = {
     etaLine: (i: number, bus: string, min: number, occupancy: string) =>
       `${i}. Bus ${spellBus(bus)} in ${min} ${min === 1 ? "minute" : "minutes"}. Reported occupancy: ${occupancy}.`,
     noBus: (stop: string) => `Sorry, no live bus towards ${stop} right now.`,
-    resultFooter: "Press 1 to hear this again. Press 9 for an arrival alert. Press 0 for the main menu.",
+    resultFooter:
+      "Press 1 to hear this again. Press 9 for an arrival alert. Press 0 for the main menu.",
     alertOk: (bus: string, stop: string) =>
       `Alert set. We will call and message you when bus ${spellBus(bus)} is five minutes from ${stop}. Thank you for using Sarthi.`,
     invalid: "Sorry, I did not get that.",
@@ -69,7 +70,8 @@ const T = {
     etaLine: (i: number, bus: string, min: number, occupancy: string) =>
       `${hiNum(i)}. Bus ${spellBus(bus)}, ${min} minute mein. Reported bheed ${occupancy}.`,
     noBus: (stop: string) => `Maaf kijiye, ${stop} ke liye abhi koi bus nahi hai.`,
-    resultFooter: "Dobara sunne ke liye ek dabaiye. Alert ke liye nau dabaiye. Mukhya menu ke liye shunya.",
+    resultFooter:
+      "Dobara sunne ke liye ek dabaiye. Alert ke liye nau dabaiye. Mukhya menu ke liye shunya.",
     alertOk: (bus: string, stop: string) =>
       `Alert lag gaya. Jab bus ${spellBus(bus)} ${stop} se paanch minute door hogi, hum aapko call aur message karenge. Sarthi ka dhanyavaad.`,
     invalid: "Maaf kijiye, samajh nahi aaya.",
@@ -245,7 +247,12 @@ function retry(call: IvrCallState, say: string): IvrStep {
   const attempts = (call.attempts ?? 0) + 1;
   const t = T[call.lang ?? "en"];
   if (attempts >= 3) {
-    return { say: t.bye, next: { ...call, state: "done", attempts }, expectDigits: 0, hangup: true };
+    return {
+      say: t.bye,
+      next: { ...call, state: "done", attempts },
+      expectDigits: 0,
+      hangup: true,
+    };
   }
   return { say, next: { ...call, attempts }, expectDigits: 1, hangup: false };
 }

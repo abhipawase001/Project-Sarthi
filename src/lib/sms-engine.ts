@@ -46,8 +46,7 @@ function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   const dLng = ((bLng - aLng) * Math.PI) / 180;
   const la1 = (aLat * Math.PI) / 180;
   const la2 = (bLat * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
@@ -68,7 +67,9 @@ export function etasForStop(routeId: string, stopId: string, buses: Bus[] = []):
     .filter((b) => b.route === routeId)
     .map((b) => {
       const etaMin = estimateLiveEtaMinutes(b.lat, b.lng, b.speed, stopId, routeId);
-      return etaMin === null ? null : { busId: b.id, etaMin, occupancy: b.occupancy, status: b.status };
+      return etaMin === null
+        ? null
+        : { busId: b.id, etaMin, occupancy: b.occupancy, status: b.status };
     })
     .filter((eta): eta is SmsEta => eta !== null)
     .sort((a, b) => a.etaMin - b.etaMin)
@@ -187,9 +188,7 @@ function formatEtas(routeId: string, stopId: string, lang: SmsLang, buses: Bus[]
   if (!etas.length) {
     return { reply: t.noBus(stop.name), session: { lang, route: routeId, stopId: null } };
   }
-  const lines = etas
-    .map((e, i) => `${i + 1}) ${e.busId} ${e.etaMin}min ${e.occupancy}`)
-    .join("\n");
+  const lines = etas.map((e, i) => `${i + 1}) ${e.busId} ${e.etaMin}min ${e.occupancy}`).join("\n");
   const reply = clamp160(`${routeId} > ${stop.name}\n${lines}\n${t.footer}`);
   return {
     reply,
@@ -241,11 +240,18 @@ export function parseSms(
   const shortcut = upper.match(/^(?:ETA|BUS)\s+(\S+)(?:\s+(.+))?$/);
   if (shortcut) {
     const routeId = findRoute(shortcut[1]);
-    if (!routeId) return { reply: clamp160(t.badRoute(routeMenu())), session: { ...session, route: null, stopId: null } };
+    if (!routeId)
+      return {
+        reply: clamp160(t.badRoute(routeMenu())),
+        session: { ...session, route: null, stopId: null },
+      };
     if (shortcut[2]) {
       const stopId = findStop(routeId, shortcut[2]);
       if (!stopId) {
-        return { reply: clamp160(t.badStop(stopMenu(routeId))), session: { ...session, route: routeId, stopId: null } };
+        return {
+          reply: clamp160(t.badStop(stopMenu(routeId))),
+          session: { ...session, route: routeId, stopId: null },
+        };
       }
       return formatEtas(routeId, stopId, lang, buses);
     }
@@ -257,7 +263,10 @@ export function parseSms(
 
   // menu / greetings / empty
   if (!raw || ["M", "MENU", "ETA", "BUS", "HI", "HELLO", "START", "NAMASTE"].includes(upper)) {
-    return { reply: clamp160(t.menu(routeMenu())), session: { ...session, route: null, stopId: null, lastBuses: null } };
+    return {
+      reply: clamp160(t.menu(routeMenu())),
+      session: { ...session, route: null, stopId: null, lastBuses: null },
+    };
   }
 
   // numbered replies inside the flow
@@ -269,7 +278,10 @@ export function parseSms(
         session: { ...session, route: routeId, stopId: null },
       };
     }
-    return { reply: clamp160(t.badRoute(routeMenu())), session: { ...session, route: null, stopId: null } };
+    return {
+      reply: clamp160(t.badRoute(routeMenu())),
+      session: { ...session, route: null, stopId: null },
+    };
   }
 
   const stopId = findStop(prev.route, upper);
