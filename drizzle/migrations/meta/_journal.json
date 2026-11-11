@@ -36,6 +36,13 @@
       "when": 1794290398256,
       "tag": "0004_idempotent_driver_location_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794375437686,
+      "tag": "0005_restrict_driver_trip_writes_to_shift_controls",
+      "breakpoints": true
     }
   ]
 }
