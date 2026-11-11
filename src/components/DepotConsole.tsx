@@ -297,13 +297,11 @@ export function DepotConsole() {
         if (error) throw error;
         await refresh();
       } else if (res.action === "schedule_service" && res.args?.bus_reg) {
-        const { error } = await supabase
-          .from("service_logs")
-          .insert({
-            bus_reg: res.args.bus_reg,
-            kind: res.args.kind ?? "general",
-            notes: "Scheduled via AI command",
-          });
+        const { error } = await supabase.from("service_logs").insert({
+          bus_reg: res.args.bus_reg,
+          kind: res.args.kind ?? "general",
+          notes: "Scheduled via AI command",
+        });
         if (error) throw error;
         await refresh();
       } else if (res.action === "assign_driver" && res.args?.bus_reg && res.args?.driver_name) {
@@ -1283,14 +1281,12 @@ function FuelTab({
       return;
     }
     setBusy(true);
-    const { error } = await supabase
-      .from("fuel_logs")
-      .insert({
-        bus_reg: reg,
-        liters: Number(liters),
-        cost: cost ? Number(cost) : null,
-        odometer_km: odometer ? Number(odometer) : null,
-      });
+    const { error } = await supabase.from("fuel_logs").insert({
+      bus_reg: reg,
+      liters: Number(liters),
+      cost: cost ? Number(cost) : null,
+      odometer_km: odometer ? Number(odometer) : null,
+    });
     if (error) {
       onError(error.message);
       setBusy(false);
@@ -1311,14 +1307,12 @@ function FuelTab({
       return;
     }
     setBusy(true);
-    const { error: serviceError } = await supabase
-      .from("service_logs")
-      .insert({
-        bus_reg: reg,
-        kind,
-        notes: serviceNotes.trim() || null,
-        next_due_km: nextDue ? Number(nextDue) : null,
-      });
+    const { error: serviceError } = await supabase.from("service_logs").insert({
+      bus_reg: reg,
+      kind,
+      notes: serviceNotes.trim() || null,
+      next_due_km: nextDue ? Number(nextDue) : null,
+    });
     if (serviceError) {
       onError(serviceError.message);
       setBusy(false);
