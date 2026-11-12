@@ -50,10 +50,10 @@ function ChannelsPage() {
 
         <div className="grid lg:grid-cols-2 gap-4">
           <ChatBox
-            title="WhatsApp Bot · +91 90000 56161"
-            subtitle="Rich replies with map links"
+            title="Message simulator · shared live ETAs"
+            subtitle="Uses the same registered buses and fresh GPS rules as SMS"
             icon={Smartphone}
-            placeholder="Hi Sarthi"
+            placeholder="ETA R1 MARKET"
           />
           <IvrConsole />
         </div>

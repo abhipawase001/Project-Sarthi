@@ -390,6 +390,13 @@ export type Database = {
             referencedRelation: "buses"
             referencedColumns: ["reg_no"]
           },
+          {
+            foreignKeyName: "live_bus_positions_bus_id_fkey"
+            columns: ["bus_id"]
+            isOneToOne: true
+            referencedRelation: "public_buses"
+            referencedColumns: ["reg_no"]
+          },
         ]
       }
       roster: {
@@ -438,6 +445,13 @@ export type Database = {
             columns: ["bus_reg"]
             isOneToOne: false
             referencedRelation: "buses"
+            referencedColumns: ["reg_no"]
+          },
+          {
+            foreignKeyName: "roster_bus_reg_fkey"
+            columns: ["bus_reg"]
+            isOneToOne: false
+            referencedRelation: "public_buses"
             referencedColumns: ["reg_no"]
           },
           {
@@ -642,6 +656,30 @@ export type Database = {
       }
     }
     Views: {
+      public_buses: {
+        Row: {
+          capacity: number | null
+          health_score: number | null
+          reg_no: string | null
+          route: string | null
+          status: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          health_score?: number | null
+          reg_no?: string | null
+          route?: string | null
+          status?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          health_score?: number | null
+          reg_no?: string | null
+          route?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       public_drivers: {
         Row: {
           id: string | null
@@ -663,6 +701,33 @@ export type Database = {
           rating?: number | null
           role?: string | null
           status?: string | null
+        }
+        Relationships: []
+      }
+      public_incident_reports: {
+        Row: {
+          bus_id: string | null
+          created_at: string | null
+          id: string | null
+          kind: string | null
+          status: string | null
+          stop_id: string | null
+        }
+        Insert: {
+          bus_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          kind?: string | null
+          status?: string | null
+          stop_id?: string | null
+        }
+        Update: {
+          bus_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          kind?: string | null
+          status?: string | null
+          stop_id?: string | null
         }
         Relationships: []
       }

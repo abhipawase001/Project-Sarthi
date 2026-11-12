@@ -16,7 +16,7 @@ export function useLiveBuses(_intervalMs = 10_000) {
     let active = true;
     const refresh = async () => {
       const [registryResult, positionResult] = await Promise.all([
-        supabase.from("buses").select("reg_no,route,capacity,status").eq("status", "active"),
+        supabase.from("public_buses").select("reg_no,route,capacity,status").eq("status", "active"),
         supabase
           .from("live_bus_positions")
           .select("bus_id,route,lat,lng,speed,heading,occupancy,observed_at,accuracy_m")

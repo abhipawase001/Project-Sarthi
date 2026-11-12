@@ -43,6 +43,20 @@
       "when": 1794375437686,
       "tag": "0005_restrict_driver_trip_writes_to_shift_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794479131874,
+      "tag": "0006_limit_bus_registry_public_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794479242632,
+      "tag": "0007_protect_incident_and_anomaly_details",
+      "breakpoints": true
     }
   ]
 }
