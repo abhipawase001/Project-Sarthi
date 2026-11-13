@@ -57,6 +57,13 @@
       "when": 1794479242632,
       "tag": "0007_protect_incident_and_anomaly_details",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794556171564,
+      "tag": "0008_grant_depot_manager_on_confirm",
+      "breakpoints": true
     }
   ]
 }
